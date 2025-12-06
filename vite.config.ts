@@ -8,5 +8,11 @@ export default defineConfig({
     port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
     host: '0.0.0.0',
     strictPort: false,
+    allowedHosts: [
+      'onp-onboard-ui.as-g8.cf.comcast.net',
+      '.cf.comcast.net', // Allow all Comcast CloudFoundry subdomains
+      'localhost',
+      '.localhost',
+    ],
   },
 })
