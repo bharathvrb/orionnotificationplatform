@@ -8,28 +8,28 @@ export const Home: React.FC = () => {
     {
       title: 'New ONP Event Onboarding',
       description: 'Configure and onboard new events to the platform with ease',
-      icon: '🚀',
+      icon: '/icons/onboard.png',
       gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
       onClick: () => navigate('/onboard'),
     },
     {
       title: 'View Event Details',
       description: 'Browse and search existing event configurations',
-      icon: '📋',
+      icon: '/icons/events.png',
       gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
       onClick: () => navigate('/events'),
     },
     {
       title: 'Check MongoDB Details',
       description: 'View MongoDB connection and data details',
-      icon: '🍃',
+      icon: '/icons/mongodb.png',
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       onClick: () => navigate('/mongodb'),
     },
     {
       title: 'Check Kafka Details',
       description: 'Monitor Kafka topics and consumer groups',
-      icon: '⚡',
+      icon: '/icons/kafka.png',
       gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
       onClick: () => navigate('/kafka'),
     },
@@ -239,7 +239,6 @@ export const Home: React.FC = () => {
                 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
                   <div style={{ 
-                    fontSize: '2.5rem',
                     width: '64px',
                     height: '64px',
                     display: 'flex',
@@ -259,7 +258,20 @@ export const Home: React.FC = () => {
                     e.currentTarget.style.transform = 'rotate(0) scale(1)';
                   }}
                   >
-                    {card.icon}
+                    {card.icon.startsWith('/') || card.icon.startsWith('http') ? (
+                      <img 
+                        src={card.icon} 
+                        alt={card.title}
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+                        }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '2.5rem' }}>{card.icon}</span>
+                    )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <h3 style={{ 
