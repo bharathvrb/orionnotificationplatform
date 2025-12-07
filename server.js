@@ -2,6 +2,7 @@ import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync, existsSync } from 'fs';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -12,10 +13,37 @@ const PORT = process.env.PORT || 8080;
 const distPath = join(__dirname, 'dist');
 const indexHtmlPath = join(distPath, 'index.html');
 
+// Get backend API URL from environment variable
+const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://onppoc-qa.as-g8.cf.comcast.net/onp/v1';
+
+// Parse JSON bodies for proxy requests
+app.use(express.json());
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
+
+// Proxy API requests to backend to avoid CORS issues
+app.use('/api', createProxyMiddleware({
+  target: BACKEND_API_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api': '', // Remove /api prefix when forwarding to backend
+  },
+  onProxyReq: (proxyReq, req, res) => {
+    // Forward all headers from the original request
+    Object.keys(req.headers).forEach((key) => {
+      if (req.headers[key]) {
+        proxyReq.setHeader(key, req.headers[key]);
+      }
+    });
+  },
+  onError: (err, req, res) => {
+    console.error('Proxy error:', err);
+    res.status(500).json({ error: 'Proxy error', message: err.message });
+  },
+}));
 
 // Serve static files from dist directory
 if (existsSync(distPath)) {
@@ -26,8 +54,8 @@ if (existsSync(distPath)) {
 
 // Handle SPA routing - serve index.html for all routes
 app.get('*', (req, res) => {
-  // Skip health check endpoint
-  if (req.path === '/health') {
+  // Skip health check and API endpoints
+  if (req.path === '/health' || req.path.startsWith('/api')) {
     return;
   }
   

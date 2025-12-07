@@ -1,7 +1,9 @@
 import axios, { type AxiosError } from 'axios';
 import type { OnboardRequest, OnboardResponse } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+// Use proxy path in production (when VITE_API_BASE_URL is not set)
+// This avoids CORS issues by proxying through the Express server
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export const onboardOnp = async (
   request: OnboardRequest
