@@ -6,6 +6,11 @@ export const validateRequest = (
   const errors: ValidationError[] = [];
   const criteria = request.requestCriteria || [];
 
+  // If no criteria selected, return empty errors (validation message shown separately in UI)
+  if (criteria.length === 0) {
+    return errors;
+  }
+
   // Validate mongodbandredis
   if (criteria.includes('mongodbandredis')) {
     if (!request.eventName?.trim()) {

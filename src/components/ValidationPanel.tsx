@@ -43,7 +43,24 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
       )}
 
       <div className="border-t-2 border-primary-300 pt-4 mt-4">
-        {isValid ? (
+        {requestCriteria.length === 0 ? (
+          <div className="flex items-center bg-blue-50 text-blue-700 p-3 rounded-lg border-2 border-blue-300">
+            <svg
+              className="w-6 h-6 mr-3 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span className="font-semibold">Please select at least one request criteria to continue</span>
+          </div>
+        ) : isValid ? (
           <div className="flex items-center bg-green-50 text-green-700 p-3 rounded-lg border-2 border-green-300">
             <svg
               className="w-6 h-6 mr-3 text-green-600"

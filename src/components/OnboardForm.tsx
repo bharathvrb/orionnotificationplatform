@@ -93,7 +93,8 @@ export const OnboardForm: React.FC = () => {
   };
 
   const errors = validateRequest(request);
-  const isValid = errors.length === 0;
+  const hasCriteria = (request.requestCriteria?.length || 0) > 0;
+  const isValid = hasCriteria && errors.length === 0;
   const requireHttpStatusCode = request.requestCriteria?.includes('fallbackdb') || false;
 
   return (
