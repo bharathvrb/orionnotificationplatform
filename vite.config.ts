@@ -15,4 +15,11 @@ export default defineConfig({
       '.localhost',
     ],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
 })

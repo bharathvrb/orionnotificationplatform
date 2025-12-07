@@ -10,4 +10,7 @@ applications:
       NODE_ENV: production
       NPM_CONFIG_PRODUCTION: false
     stack: cflinuxfs4
+    # Serve index.html for all routes (SPA routing)
+    health-check-type: http
+    health-check-http-endpoint: /
 
