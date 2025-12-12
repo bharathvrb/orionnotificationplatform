@@ -97,6 +97,48 @@ To configure a different API base URL, create a `.env` file in the root director
 VITE_API_BASE_URL=http://your-api-url:port
 ```
 
+### SSO Authentication
+
+The application supports Single Sign-On (SSO) authentication using OAuth 2.0/OIDC. Configure SSO by setting the following environment variables in your `.env` file:
+
+#### Google OAuth Configuration
+
+```env
+VITE_SSO_PROVIDER=google
+VITE_SSO_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+VITE_SSO_REDIRECT_URI=http://localhost:5173/auth/callback
+VITE_SSO_SCOPES=openid,profile,email
+```
+
+**To get Google OAuth credentials:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Navigate to **APIs & Services** → **Credentials**
+4. Click **Create Credentials** → **OAuth client ID**
+5. Select **Web application** as the application type
+6. Add your redirect URI (e.g., `http://localhost:5173/auth/callback`)
+7. Copy the **Client ID** and use it as `VITE_SSO_CLIENT_ID`
+
+#### Generic OIDC Configuration
+
+```env
+VITE_SSO_PROVIDER=oidc
+VITE_SSO_CLIENT_ID=your-oidc-client-id
+VITE_SSO_AUTHORITY=https://your-identity-provider.com
+VITE_SSO_REDIRECT_URI=http://localhost:5173/auth/callback
+VITE_SSO_SCOPES=openid,profile,email
+```
+
+**Environment Variables:**
+- `VITE_SSO_PROVIDER`: SSO provider type (`google` or `oidc`)
+- `VITE_SSO_CLIENT_ID`: OAuth client ID (required)
+- `VITE_SSO_CLIENT_SECRET`: OAuth client secret (optional, for token refresh)
+- `VITE_SSO_AUTHORITY`: OIDC authority URL (required for OIDC provider)
+- `VITE_SSO_REDIRECT_URI`: OAuth redirect URI (defaults to `/auth/callback`)
+- `VITE_SSO_SCOPES`: Comma-separated list of OAuth scopes (defaults to `openid,profile,email`)
+
+**Note:** All routes are protected by default. Users must authenticate via SSO before accessing the application.
+
 ## Usage
 
 ### Request Criteria

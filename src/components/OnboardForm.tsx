@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import type { OnboardRequest, RequestCriteria, TaskResult } from '../types';
+import type { OnboardRequest, RequestCriteria, TaskResult, Environment } from '../types';
 import { validateRequest } from '../services/validation';
 import { onboardOnp } from '../services/api';
 import { saveTemplate, loadTemplate } from '../services/storage';
@@ -19,8 +19,31 @@ const CRITERIA_OPTIONS: { value: RequestCriteria; label: string }[] = [
   { value: 'concoursevault', label: 'Concourse Vault' },
 ];
 
+const ENVIRONMENT_OPTIONS: Environment[] = [
+  'DEV AS-G8',
+  'DEV HO-G2',
+  'QA AS-G8',
+  'QA HO-G2',
+  'INT AS-G8',
+  'INT HO-G2',
+  'FLX AS-G8',
+  'FLA HO-G2',
+  'TRN AS-G8',
+  'TRN HO-G2',
+  'STG CH2-G2',
+  'STG HO-G4',
+  'PROD G1',
+  'PROD AS-G6',
+  'PROD HO-G1',
+  'PROD HO-G3',
+  'BUS AS-G8',
+  'BUS HO-G2',
+];
+
 export const OnboardForm: React.FC = () => {
   const navigate = useNavigate();
+  const [environment, setEnvironment] = useState<Environment | ''>('');
+  const [showForm, setShowForm] = useState(false);
   const [request, setRequest] = useState<OnboardRequest>({
     requestCriteria: [],
     downstreamDetails: [],
@@ -83,13 +106,30 @@ export const OnboardForm: React.FC = () => {
     },
   });
 
+  const handleEnvironmentSelect = () => {
+    if (environment) {
+      setRequest((prev) => ({ ...prev, environment: environment as Environment }));
+      setShowForm(true);
+    }
+  };
+
+  const handleBackToEnvironment = () => {
+    setShowForm(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
       return;
     }
 
-    mutation.mutate(request);
+    // Ensure environment is included in the request
+    const requestWithEnvironment = {
+      ...request,
+      environment: environment as Environment,
+    };
+
+    mutation.mutate(requestWithEnvironment);
   };
 
   const errors = validateRequest(request);
@@ -97,24 +137,108 @@ export const OnboardForm: React.FC = () => {
   const isValid = hasCriteria && errors.length === 0;
   const requireHttpStatusCode = request.requestCriteria?.includes('fallbackdb') || false;
 
+  // Environment Selection Screen
+  if (!showForm) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-400 via-primary-300 to-primary-400 py-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <button
+              onClick={() => navigate('/')}
+              className="mb-4 flex items-center text-white hover:text-primary-100 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Home
+            </button>
+            <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 rounded-xl shadow-2xl p-6 mb-4 border-2 border-primary-600">
+              <h1 className="text-2xl font-bold text-white mb-2 drop-shadow-lg">ONP Event Onboard</h1>
+              <p className="text-white text-lg font-medium">
+                Select environment to configure and submit onboarding requests
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8">
+            <h2 className="text-xl font-semibold text-primary-700 mb-6 flex items-center">
+              <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
+              Select Environment
+            </h2>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-primary-700 mb-3">
+                Environment *
+              </label>
+              <select
+                value={environment}
+                onChange={(e) => setEnvironment(e.target.value as Environment)}
+                className="w-full px-4 py-3 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900 text-base font-medium transition-all"
+              >
+                <option value="">-- Select Environment --</option>
+                {ENVIRONMENT_OPTIONS.map((env) => (
+                  <option key={env} value={env}>
+                    {env}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={handleEnvironmentSelect}
+              disabled={!environment}
+              className={`w-full px-6 py-4 rounded-lg font-semibold text-lg transition-all transform ${
+                environment
+                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main Form Screen
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-400 via-primary-300 to-primary-400 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/')}
-            className="mb-4 flex items-center text-white hover:text-primary-100 transition-colors"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Home
-          </button>
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={handleBackToEnvironment}
+              className="flex items-center text-white hover:text-primary-100 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Environment Selection
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center text-white hover:text-primary-100 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              Home
+            </button>
+          </div>
           <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 rounded-xl shadow-2xl p-6 mb-4 border-2 border-primary-600">
-            <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">ONP Onboard UI</h1>
-            <p className="text-white text-lg font-medium">
-              Configure and submit onboarding requests for the Orion Notification Platform
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-white mb-2 drop-shadow-lg">ONP Event Onboard</h1>
+                <p className="text-white text-lg font-medium">
+                  Configure and submit onboarding requests for the Orion Notification Platform
+                </p>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/30">
+                <p className="text-xs text-white/80 mb-1">Environment</p>
+                <p className="text-lg font-bold text-white">{environment}</p>
+              </div>
+            </div>
           </div>
         </div>
 

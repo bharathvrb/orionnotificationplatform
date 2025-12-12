@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const actionCards = [
     {
@@ -89,6 +91,81 @@ export const Home: React.FC = () => {
         animation: 'pulse 5s ease-in-out infinite'
       }}></div>
 
+      {/* Header with User Info */}
+      <div style={{ position: 'absolute', top: '1rem', right: '1.5rem', zIndex: 10 }}>
+        {user && (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.75rem',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            padding: '0.5rem 1rem',
+            borderRadius: '1.5rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          }}>
+            {/* User Avatar */}
+            <div style={{
+              width: '2rem',
+              height: '2rem',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: '700',
+              fontSize: '0.875rem',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+              flexShrink: 0
+            }}>
+              <svg 
+                width="16" 
+                height="16" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: '#1e40af', lineHeight: '1.2' }}>
+                {user.name}
+              </div>
+              <div style={{ fontSize: '0.6875rem', color: '#6b7280', lineHeight: '1.2' }}>
+                {user.username}
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              style={{
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.8125rem',
+                fontWeight: '600',
+                color: '#dc2626',
+                backgroundColor: 'transparent',
+                border: '1px solid #dc2626',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#fee2e2';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Hero Section */}
       <div style={{ paddingTop: '2.5rem', paddingBottom: '2rem', width: '100%', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', width: '100%' }}>
@@ -103,11 +180,11 @@ export const Home: React.FC = () => {
                 backgroundClip: 'text',
                 filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
               }}>
-                🚀
+                
               </div>
             </div>
             <h1 style={{ 
-              fontSize: '2.75rem', 
+              fontSize: '2.25rem', 
               fontWeight: '800', 
               color: 'white', 
               marginBottom: '0.75rem', 
@@ -165,7 +242,7 @@ export const Home: React.FC = () => {
               boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3)'
             }}></div>
             <h2 style={{ 
-              fontSize: '1.5rem', 
+              fontSize: '1.25rem', 
               fontWeight: '700', 
               color: '#1e40af',
               margin: 0,
@@ -182,7 +259,7 @@ export const Home: React.FC = () => {
             fontWeight: '400'
           }}>
             ONP (Orion Notification Platform) enables applications to send notifications to other systems within Comcast. 
-            ONP guarantees <strong style={{ color: '#2563eb', fontWeight: '600' }}>fast, secure, and reliable</strong> communication. 
+            ONP guarantees fast, secure, and reliable communication. 
             With just a few configuration steps, consumers can start sending messages to destination systems.
           </p>
         </div>
@@ -190,7 +267,7 @@ export const Home: React.FC = () => {
         {/* Action Cards */}
         <div style={{ marginBottom: '0', width: '100%' }}>
           <h2 style={{ 
-            fontSize: '1.75rem', 
+            fontSize: '1.5rem', 
             fontWeight: '700', 
             color: 'white', 
             marginBottom: '1.5rem', 
@@ -275,7 +352,7 @@ export const Home: React.FC = () => {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <h3 style={{ 
-                      fontSize: '1.25rem', 
+                      fontSize: '1.125rem', 
                       fontWeight: '700', 
                       color: '#1e40af', 
                       marginBottom: '0.5rem',

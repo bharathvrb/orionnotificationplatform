@@ -1,9 +1,27 @@
 import axios, { type AxiosError } from 'axios';
 import type { OnboardRequest, OnboardResponse } from '../types';
+import { getValidAccessToken } from './auth';
 
 // Use proxy path in production (when VITE_API_BASE_URL is not set)
 // This avoids CORS issues by proxying through the Express server
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+
+// Create axios instance with interceptors for auth
+export const apiClient = axios.create();
+
+// Add auth token to requests
+apiClient.interceptors.request.use(
+  async (config) => {
+    const token = await getValidAccessToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export const onboardOnp = async (
   request: OnboardRequest
@@ -12,6 +30,9 @@ export const onboardOnp = async (
     // Extract headers from request
     const headers: Record<string, string> = {};
     
+    if (request.environment) {
+      headers['environment'] = request.environment;
+    }
     if (request.requestCriteria) {
       headers['requestCriteria'] = request.requestCriteria.join(',');
     }
@@ -55,7 +76,7 @@ export const onboardOnp = async (
       body.replicationFactor = request.replicationFactor;
     }
 
-    const response = await axios.post<OnboardResponse>(
+    const response = await apiClient.post<OnboardResponse>(
       `${API_BASE_URL}/onboardonp`,
       body,
       { headers }

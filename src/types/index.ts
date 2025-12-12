@@ -16,7 +16,28 @@ export interface DownstreamDetail {
   httpStatusCode?: number;
 }
 
+export type Environment =
+  | 'DEV AS-G8'
+  | 'DEV HO-G2'
+  | 'QA AS-G8'
+  | 'QA HO-G2'
+  | 'INT AS-G8'
+  | 'INT HO-G2'
+  | 'FLX AS-G8'
+  | 'FLA HO-G2'
+  | 'TRN AS-G8'
+  | 'TRN HO-G2'
+  | 'STG CH2-G2'
+  | 'STG HO-G4'
+  | 'PROD G1'
+  | 'PROD AS-G6'
+  | 'PROD HO-G1'
+  | 'PROD HO-G3'
+  | 'BUS AS-G8'
+  | 'BUS HO-G2';
+
 export interface OnboardRequest {
+  environment?: Environment;
   requestCriteria: RequestCriteria[];
   eventName?: string;
   headerSchema?: string; // JSON string
