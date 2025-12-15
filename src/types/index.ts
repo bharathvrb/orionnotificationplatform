@@ -8,7 +8,7 @@ export type RequestCriteria =
 
 export interface DownstreamDetail {
   name: string;
-  endpoint: string;
+  endpoint?: string;
   clientId?: string;
   clientSecret?: string;
   scope?: string;
