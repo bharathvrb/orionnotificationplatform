@@ -6,6 +6,7 @@ describe('validation', () => {
     it('should return no errors for valid mongodbandredis request', () => {
       const request: OnboardRequest = {
         requestCriteria: ['mongodbandredis'],
+        authorization: 'token',
         eventName: 'test-event',
         headerSchema: '{"type": "object"}',
         payloadSchema: '{"type": "object"}',
@@ -17,7 +18,6 @@ describe('validation', () => {
             clientId: 'client-id',
             clientSecret: 'client-secret',
             scope: 'scope',
-            subscriberName: 'test-subscriber',
           },
         ],
       };
@@ -29,6 +29,7 @@ describe('validation', () => {
     it('should return errors for missing required fields in mongodbandredis', () => {
       const request: OnboardRequest = {
         requestCriteria: ['mongodbandredis'],
+        authorization: 'token',
       };
 
       const errors = validateRequest(request);
@@ -42,6 +43,7 @@ describe('validation', () => {
     it('should return errors for invalid JSON in schemas', () => {
       const request: OnboardRequest = {
         requestCriteria: ['mongodbandredis'],
+        authorization: 'token',
         eventName: 'test-event',
         headerSchema: 'invalid json',
         payloadSchema: '{"type": "object"}',
@@ -56,6 +58,7 @@ describe('validation', () => {
     it('should validate kafkatopic requirements', () => {
       const request: OnboardRequest = {
         requestCriteria: ['kafkatopic'],
+        authorization: 'token',
       };
 
       const errors = validateRequest(request);
@@ -67,6 +70,7 @@ describe('validation', () => {
     it('should validate deploymentmanifest requirements', () => {
       const request: OnboardRequest = {
         requestCriteria: ['deploymentmanifest'],
+        authorization: 'token',
       };
 
       const errors = validateRequest(request);
@@ -78,13 +82,14 @@ describe('validation', () => {
     it('should validate fallbackdb requirements', () => {
       const request: OnboardRequest = {
         requestCriteria: ['fallbackdb'],
+        authorization: 'token',
         downstreamDetails: [
           {
             name: 'test',
-            endpoint: 'https://example.com',
-            clientId: 'id',
-            clientSecret: 'secret',
-            scope: 'scope',
+            httpStatusCode: 500,
+            maintenanceFlag: true,
+            maxRetryCount: 3,
+            retryDelay: 5,
           },
         ],
       };
