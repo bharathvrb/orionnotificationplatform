@@ -5,6 +5,7 @@ import type { OnboardRequest, RequestCriteria, TaskResult, Environment } from '.
 import { validateRequest } from '../services/validation';
 import { onboardOnp } from '../services/api';
 import { saveTemplate, loadTemplate } from '../services/storage';
+import { generateSatToken } from '../services/sat';
 import { JsonEditor } from './JsonEditor';
 import { DownstreamEditor } from './DownstreamEditor';
 import { ValidationPanel } from './ValidationPanel';
@@ -50,6 +51,14 @@ export const OnboardForm: React.FC = () => {
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [taskResults, setTaskResults] = useState<TaskResult[]>([]);
+  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [tokenCredentials, setTokenCredentials] = useState({
+    clientId: '',
+    clientSecret: '',
+    scope: '',
+  });
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   // Load template on mount
   useEffect(() => {
@@ -115,6 +124,37 @@ export const OnboardForm: React.FC = () => {
 
   const handleBackToEnvironment = () => {
     setShowForm(false);
+  };
+
+  const handleGenerateToken = async () => {
+    if (!environment) {
+      setTokenError('Please select an environment first');
+      return;
+    }
+
+    if (!tokenCredentials.clientId.trim() || !tokenCredentials.clientSecret.trim() || !tokenCredentials.scope.trim()) {
+      setTokenError('Please fill in all fields (Client ID, Client Secret, and Scope)');
+      return;
+    }
+
+    setIsGeneratingToken(true);
+    setTokenError(null);
+
+    try {
+      const token = await generateSatToken(environment as Environment, {
+        clientId: tokenCredentials.clientId,
+        clientSecret: tokenCredentials.clientSecret,
+        scope: tokenCredentials.scope,
+      });
+
+      updateRequest({ authorization: token });
+      setShowTokenModal(false);
+      setTokenCredentials({ clientId: '', clientSecret: '', scope: '' });
+    } catch (error) {
+      setTokenError(error instanceof Error ? error.message : 'Failed to generate token');
+    } finally {
+      setIsGeneratingToken(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -274,6 +314,44 @@ export const OnboardForm: React.FC = () => {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              {/* Authorization Token */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-primary-700 mb-2">
+                  Authorization Token *
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={request.authorization || ''}
+                    onChange={(e) => updateRequest({ authorization: e.target.value })}
+                    className={`flex-1 px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all bg-white text-gray-900 placeholder-gray-400 ${
+                      validationErrors.authorization 
+                        ? 'border-red-500 focus:ring-red-300 focus:border-red-500' 
+                        : 'border-primary-400 focus:ring-primary-300 focus:border-primary-500'
+                    }`}
+                    placeholder="Enter authorization token or generate one"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowTokenModal(true)}
+                    disabled={!environment}
+                    className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                      environment
+                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    title={!environment ? 'Please select an environment first' : 'Generate token'}
+                  >
+                    Generate Token
+                  </button>
+                </div>
+                {validationErrors.authorization && (
+                  <p className="mt-1 text-sm text-red-600 font-medium">
+                    {validationErrors.authorization}
+                  </p>
+                )}
               </div>
 
               {/* Event Name */}
@@ -516,6 +594,129 @@ export const OnboardForm: React.FC = () => {
             )}
           </div>
         </form>
+
+        {/* Token Generation Modal */}
+        {showTokenModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-primary-700">
+                  Generate Authorization Token
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowTokenModal(false);
+                    setTokenError(null);
+                    setTokenCredentials({ clientId: '', clientSecret: '', scope: '' });
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-primary-700 mb-2">
+                    Environment
+                  </label>
+                  <div className="px-4 py-2 bg-primary-50 border-2 border-primary-300 rounded-lg">
+                    <p className="text-sm font-medium text-primary-800">{environment}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-primary-700 mb-2">
+                    Client ID *
+                  </label>
+                  <input
+                    type="text"
+                    value={tokenCredentials.clientId}
+                    onChange={(e) =>
+                      setTokenCredentials({ ...tokenCredentials, clientId: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900"
+                    placeholder="Enter client ID"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-primary-700 mb-2">
+                    Client Secret *
+                  </label>
+                  <input
+                    type="password"
+                    value={tokenCredentials.clientSecret}
+                    onChange={(e) =>
+                      setTokenCredentials({ ...tokenCredentials, clientSecret: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900"
+                    placeholder="Enter client secret"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-primary-700 mb-2">
+                    Scope *
+                  </label>
+                  <input
+                    type="text"
+                    value={tokenCredentials.scope}
+                    onChange={(e) =>
+                      setTokenCredentials({ ...tokenCredentials, scope: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900"
+                    placeholder="Enter scope"
+                  />
+                </div>
+
+                {tokenError && (
+                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
+                    <p className="text-sm text-red-600 font-medium">{tokenError}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTokenModal(false);
+                      setTokenError(null);
+                      setTokenCredentials({ clientId: '', clientSecret: '', scope: '' });
+                    }}
+                    className="flex-1 px-4 py-2.5 border-2 border-primary-400 text-primary-700 rounded-lg font-semibold hover:bg-primary-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGenerateToken}
+                    disabled={isGeneratingToken}
+                    className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-white transition-all ${
+                      isGeneratingToken
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
+                    }`}
+                  >
+                    {isGeneratingToken ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                      </span>
+                    ) : (
+                      'Generate Token'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

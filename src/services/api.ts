@@ -42,6 +42,11 @@ export const onboardOnp = async (
     if (request.gitAccessToken) {
       headers['gitAccessToken'] = request.gitAccessToken;
     }
+    if (request.authorization) {
+      // Prefix "Bearer " if not already present
+      const token = request.authorization.trim();
+      headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    }
 
     // Build request body
     const body: any = {};

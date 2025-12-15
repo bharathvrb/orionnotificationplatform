@@ -48,6 +48,7 @@ export interface OnboardRequest {
   replicationFactor?: number;
   commitMessage?: string;
   gitAccessToken?: string;
+  authorization?: string;
 }
 
 export interface TaskResult {

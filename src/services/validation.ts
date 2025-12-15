@@ -11,6 +11,11 @@ export const validateRequest = (
     return errors;
   }
 
+  // Validate authorization token (required for all requests)
+  if (!request.authorization?.trim()) {
+    errors.push({ field: 'authorization', message: 'Authorization token is required' });
+  }
+
   // Validate mongodbandredis
   if (criteria.includes('mongodbandredis')) {
     if (!request.eventName?.trim()) {
