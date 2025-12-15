@@ -525,6 +525,7 @@ export const OnboardForm: React.FC = () => {
                   onChange={(details) => updateRequest({ downstreamDetails: details })}
                   errors={validationErrors}
                   requireHttpStatusCode={requireHttpStatusCode}
+                  showClientAndEndpoint={request.requestCriteria?.includes('mongodbandredis') || false}
                 />
               )}
             </div>

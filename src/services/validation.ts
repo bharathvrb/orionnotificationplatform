@@ -49,17 +49,17 @@ export const validateRequest = (
         if (!detail.endpoint?.trim()) {
           errors.push({ field: `downstreamDetails[${index}].endpoint`, message: 'Endpoint is required' });
         }
-        if (!detail.clientId?.trim()) {
-          errors.push({ field: `downstreamDetails[${index}].clientId`, message: 'Client ID is required' });
-        }
-        if (!detail.clientSecret?.trim()) {
-          errors.push({ field: `downstreamDetails[${index}].clientSecret`, message: 'Client secret is required' });
-        }
-        if (!detail.scope?.trim()) {
-          errors.push({ field: `downstreamDetails[${index}].scope`, message: 'Scope is required' });
-        }
-        if (!detail.subscriberName?.trim()) {
-          errors.push({ field: `downstreamDetails[${index}].subscriberName`, message: 'Subscriber name is required' });
+        const hasAnyClientFields = !!(detail.clientId?.trim() || detail.clientSecret?.trim() || detail.scope?.trim());
+        if (hasAnyClientFields) {
+          if (!detail.clientId?.trim()) {
+            errors.push({ field: `downstreamDetails[${index}].clientId`, message: 'Client ID is required when any client credential is provided' });
+          }
+          if (!detail.clientSecret?.trim()) {
+            errors.push({ field: `downstreamDetails[${index}].clientSecret`, message: 'Client secret is required when any client credential is provided' });
+          }
+          if (!detail.scope?.trim()) {
+            errors.push({ field: `downstreamDetails[${index}].scope`, message: 'Scope is required when any client credential is provided' });
+          }
         }
       });
     }
@@ -113,8 +113,20 @@ export const validateRequest = (
       errors.push({ field: 'downstreamDetails', message: 'At least one downstream detail is required for fallback DB' });
     } else {
       request.downstreamDetails.forEach((detail, index) => {
+        if (!detail.name?.trim()) {
+          errors.push({ field: `downstreamDetails[${index}].name`, message: 'Name is required for fallback DB' });
+        }
         if (detail.httpStatusCode === undefined) {
           errors.push({ field: `downstreamDetails[${index}].httpStatusCode`, message: 'HTTP status code is required for fallback DB' });
+        }
+        if (detail.maintenanceFlag === undefined) {
+          errors.push({ field: `downstreamDetails[${index}].maintenanceFlag`, message: 'Maintenance flag is required for fallback DB' });
+        }
+        if (detail.maxRetryCount === undefined) {
+          errors.push({ field: `downstreamDetails[${index}].maxRetryCount`, message: 'Max retry count is required for fallback DB' });
+        }
+        if (detail.retryDelay === undefined) {
+          errors.push({ field: `downstreamDetails[${index}].retryDelay`, message: 'Retry delay is required for fallback DB' });
         }
       });
     }

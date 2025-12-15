@@ -9,11 +9,13 @@ export type RequestCriteria =
 export interface DownstreamDetail {
   name: string;
   endpoint: string;
-  clientId: string;
-  clientSecret: string;
-  scope: string;
-  subscriberName?: string;
+  clientId?: string;
+  clientSecret?: string;
+  scope?: string;
   httpStatusCode?: number;
+  maintenanceFlag?: boolean;
+  maxRetryCount?: number;
+  retryDelay?: number;
 }
 
 export type Environment =

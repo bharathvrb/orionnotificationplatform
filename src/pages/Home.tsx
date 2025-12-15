@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [showAbout, setShowAbout] = useState(false);
 
   const actionCards = [
     {
@@ -255,13 +256,148 @@ export const Home: React.FC = () => {
             fontSize: '1rem', 
             color: '#4b5563', 
             lineHeight: '1.7', 
-            marginBottom: '0',
+            marginBottom: '0.75rem',
             fontWeight: '400'
           }}>
-            ONP (Orion Notification Platform) enables applications to send notifications to other systems within Comcast. 
-            ONP guarantees fast, secure, and reliable communication. 
-            With just a few configuration steps, consumers can start sending messages to destination systems.
+            ONP (Orion Notification Platform) enables applications to send notifications to other systems within Comcast. ONP guarantees fast, secure, and reliable communication. With just a few configuration steps, consumers can start sending messages to destination systems.
           </p>
+          {!showAbout && (
+            <button
+              onClick={() => setShowAbout(true)}
+              style={{
+                marginTop: '0.5rem',
+                padding: '0.5rem 0.75rem',
+                borderRadius: '0.5rem',
+                background: 'transparent',
+                color: '#1f2937',
+                fontWeight: 600,
+                border: '1px solid #e5e7eb',
+                cursor: 'pointer'
+              }}
+            >
+              More
+            </button>
+          )}
+
+          {showAbout && (
+            <>
+              <div style={{
+                marginTop: '1rem',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '1rem'
+              }}>
+                <div style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                  borderRadius: '1rem',
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  boxShadow: '0 20px 30px -15px rgba(0, 0, 0, 0.15)',
+                  padding: '0.75rem'
+                }}>
+                  <div style={{ 
+                    fontSize: '0.95rem', 
+                    fontWeight: 700, 
+                    color: '#1e3a8a',
+                    marginBottom: '0.5rem'
+                  }}>Orion Message Service Flow</div>
+                  <div style={{
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '0.75rem',
+                    padding: '0.5rem',
+                    border: '1px solid rgba(59, 130, 246, 0.15)',
+                    textAlign: 'center'
+                  }}>
+                    <img
+                      src="/images/onp-message-service-overview.png"
+                      alt="Orion Message Service flow diagram"
+                      style={{ width: '100%', borderRadius: '0.5rem', border: '1px solid rgba(59, 130, 246, 0.1)' }}
+                    />
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#4b5563' }}>
+                      High-level flow of schema cache, audit, Kafka topics, and downstream routing.
+                    </div>
+                  </div>
+                </div>
+                <div style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                  borderRadius: '1rem',
+                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                  boxShadow: '0 20px 30px -15px rgba(0, 0, 0, 0.15)',
+                  padding: '0.75rem'
+                }}>
+                  <div style={{ 
+                    fontSize: '0.95rem', 
+                    fontWeight: 700, 
+                    color: '#065f46',
+                    marginBottom: '0.5rem'
+                  }}>ONP Notification Platform Flow</div>
+                  <div style={{
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '0.75rem',
+                    padding: '0.5rem',
+                    border: '1px solid rgba(16, 185, 129, 0.15)',
+                    textAlign: 'center'
+                  }}>
+                    <img
+                      src="/images/onp-notification-platform-flow.png"
+                      alt="ONP notification platform flow diagram"
+                      style={{ width: '100%', borderRadius: '0.5rem', border: '1px solid rgba(16, 185, 129, 0.1)' }}
+                    />
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#4b5563' }}>
+                      OMW and ONPSubscriber sequence: cache lookup, Mongo refresh, validation, Kafka, downstream, and fallback.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{
+                marginTop: '1rem',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                gap: '0.75rem'
+              }}>
+                <a
+                  href="https://etwiki.sys.comcast.net/pages/viewpage.action?pageId=775918571"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 0.9rem',
+                    borderRadius: '0.75rem',
+                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                    background: 'rgba(59, 130, 246, 0.08)',
+                    color: '#1d4ed8',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    boxShadow: '0 10px 20px -12px rgba(59, 130, 246, 0.35)'
+                  }}
+                >
+                  ONP Overview Wiki
+                </a>
+                <a
+                  href="https://etwiki.sys.comcast.net/display/BSTA/ONP+Notifications"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 0.9rem',
+                    borderRadius: '0.75rem',
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    background: 'rgba(16, 185, 129, 0.08)',
+                    color: '#047857',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    boxShadow: '0 10px 20px -12px rgba(16, 185, 129, 0.3)'
+                  }}
+                >
+                  ONP Notifications Wiki
+                </a>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Action Cards */}
