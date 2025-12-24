@@ -11,27 +11,27 @@ export const TaskResults: React.FC<TaskResultsProps> = ({
   isLoading = false,
 }) => {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const total = results.length;
+  const successCount = results.filter((r) => r.status === 'Success').length;
+  const failureCount = results.filter((r) => r.status === 'Failure').length;
+  const partialCount = results.filter((r) => r.status === 'Partial').length;
 
   const toggleExpand = (task: string) => {
-    const newExpanded = new Set(expandedTasks);
-    if (newExpanded.has(task)) {
-      newExpanded.delete(task);
-    } else {
-      newExpanded.add(task);
-    }
-    setExpandedTasks(newExpanded);
+    const next = new Set(expandedTasks);
+    next.has(task) ? next.delete(task) : next.add(task);
+    setExpandedTasks(next);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Success':
-        return 'bg-green-100 text-green-800 border-green-400';
+        return 'bg-green-50 text-green-800 border-green-200';
       case 'Failure':
-        return 'bg-red-100 text-red-800 border-red-400';
+        return 'bg-red-50 text-red-800 border-red-200';
       case 'Partial':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-400';
+        return 'bg-yellow-50 text-yellow-800 border-yellow-200';
       default:
-        return 'bg-primary-50 text-primary-800 border-primary-300';
+        return 'bg-primary-50 text-primary-800 border-primary-200';
     }
   };
 
@@ -112,7 +112,9 @@ export const TaskResults: React.FC<TaskResultsProps> = ({
           <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
           Task Results
         </h3>
-        <p className="text-primary-600 italic bg-primary-50 p-3 rounded-lg border-2 border-primary-300">No results yet. Submit the form to see task results.</p>
+        <p className="text-primary-600 italic bg-primary-50 p-3 rounded-lg border-2 border-primary-300">
+          No results yet. Submit the form to see task results.
+        </p>
       </div>
     );
   }
@@ -123,6 +125,28 @@ export const TaskResults: React.FC<TaskResultsProps> = ({
         <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
         Task Results
       </h3>
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        <span className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm font-semibold border border-primary-300">
+          Total: {total}
+        </span>
+        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold border border-green-300">
+          Success: {successCount}
+        </span>
+        <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-semibold border border-red-300">
+          Failure: {failureCount}
+        </span>
+        {partialCount > 0 && (
+          <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold border border-yellow-300">
+            Partial: {partialCount}
+          </span>
+        )}
+      </div>
+
+      <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200">
+        <strong>Note:</strong> Each task shows its status, message, and optional raw data. Use "View Raw" to inspect payloads.
+      </div>
+
       <div className="space-y-4">
         {results.map((result, index) => (
           <div
@@ -133,9 +157,9 @@ export const TaskResults: React.FC<TaskResultsProps> = ({
               <div className="flex items-start space-x-3 flex-1">
                 <div className="mt-0.5">{getStatusIcon(result.status)}</div>
                 <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h4 className="font-bold text-lg">{result.task}</h4>
-                    <span className="px-3 py-1 text-xs font-bold rounded-full shadow-sm">
+                    <span className="px-3 py-1 text-xs font-bold rounded-full shadow-sm bg-white bg-opacity-70 border border-current">
                       {result.status}
                     </span>
                   </div>

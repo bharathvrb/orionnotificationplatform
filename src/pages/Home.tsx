@@ -261,23 +261,57 @@ export const Home: React.FC = () => {
           }}>
             ONP (Orion Notification Platform) enables applications to send notifications to other systems within Comcast. ONP guarantees fast, secure, and reliable communication. With just a few configuration steps, consumers can start sending messages to destination systems.
           </p>
-          {!showAbout && (
-            <button
-              onClick={() => setShowAbout(true)}
-              style={{
-                marginTop: '0.5rem',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.5rem',
-                background: 'transparent',
-                color: '#1f2937',
-                fontWeight: 600,
-                border: '1px solid #e5e7eb',
-                cursor: 'pointer'
-              }}
-            >
-              More
-            </button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+            {!showAbout ? (
+              <button
+                onClick={() => setShowAbout(true)}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '0.5rem',
+                  background: 'transparent',
+                  color: '#1f2937',
+                  fontWeight: 600,
+                  border: '1px solid #e5e7eb',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f3f4f6';
+                  e.currentTarget.style.borderColor = '#d1d5db';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                }}
+              >
+                More
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowAbout(false)}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '0.5rem',
+                  background: 'transparent',
+                  color: '#1f2937',
+                  fontWeight: 600,
+                  border: '1px solid #e5e7eb',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f3f4f6';
+                  e.currentTarget.style.borderColor = '#d1d5db';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                }}
+              >
+                Less
+              </button>
+            )}
+          </div>
 
           {showAbout && (
             <>
@@ -349,52 +383,109 @@ export const Home: React.FC = () => {
                 </div>
               </div>
 
+              {/* References Section */}
               <div style={{
-                marginTop: '1rem',
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                gap: '0.75rem'
+                marginTop: '1.5rem',
+                paddingTop: '1.5rem',
+                borderTop: '1px solid rgba(0, 0, 0, 0.1)'
               }}>
-                <a
-                  href="https://etwiki.sys.comcast.net/pages/viewpage.action?pageId=775918571"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.75rem 0.9rem',
-                    borderRadius: '0.75rem',
-                    border: '1px solid rgba(59, 130, 246, 0.2)',
-                    background: 'rgba(59, 130, 246, 0.08)',
-                    color: '#1d4ed8',
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    boxShadow: '0 10px 20px -12px rgba(59, 130, 246, 0.35)'
-                  }}
-                >
-                  ONP Overview Wiki
-                </a>
-                <a
-                  href="https://etwiki.sys.comcast.net/display/BSTA/ONP+Notifications"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.75rem 0.9rem',
-                    borderRadius: '0.75rem',
-                    border: '1px solid rgba(16, 185, 129, 0.2)',
-                    background: 'rgba(16, 185, 129, 0.08)',
-                    color: '#047857',
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    boxShadow: '0 10px 20px -12px rgba(16, 185, 129, 0.3)'
-                  }}
-                >
-                  ONP Notifications Wiki
-                </a>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: '0.75rem'
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '1.5rem',
+                    background: 'linear-gradient(to bottom, #8b5cf6, #7c3aed)',
+                    borderRadius: '9999px',
+                    marginRight: '0.75rem',
+                    boxShadow: '0 2px 4px -1px rgba(139, 92, 246, 0.3)'
+                  }}></div>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '700',
+                    color: '#6b21a8',
+                    margin: 0,
+                    letterSpacing: '-0.01em'
+                  }}>
+                    References
+                  </h3>
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                  gap: '0.75rem'
+                }}>
+                  <a
+                    href="https://etwiki.sys.comcast.net/pages/viewpage.action?pageId=775918571"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.75rem 0.9rem',
+                      borderRadius: '0.75rem',
+                      border: '1px solid rgba(59, 130, 246, 0.2)',
+                      background: 'rgba(59, 130, 246, 0.08)',
+                      color: '#1d4ed8',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                      boxShadow: '0 10px 20px -12px rgba(59, 130, 246, 0.35)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(59, 130, 246, 0.12)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 12px 24px -12px rgba(59, 130, 246, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 10px 20px -12px rgba(59, 130, 246, 0.35)';
+                    }}
+                  >
+                    <svg style={{ width: '1.25rem', height: '1.25rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    ONP Overview Wiki
+                  </a>
+                  <a
+                    href="https://etwiki.sys.comcast.net/display/BSTA/ONP+Notifications"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.75rem 0.9rem',
+                      borderRadius: '0.75rem',
+                      border: '1px solid rgba(16, 185, 129, 0.2)',
+                      background: 'rgba(16, 185, 129, 0.08)',
+                      color: '#047857',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                      boxShadow: '0 10px 20px -12px rgba(16, 185, 129, 0.3)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(16, 185, 129, 0.12)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 12px 24px -12px rgba(16, 185, 129, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 10px 20px -12px rgba(16, 185, 129, 0.3)';
+                    }}
+                  >
+                    <svg style={{ width: '1.25rem', height: '1.25rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    ONP Notifications Wiki
+                  </a>
+                </div>
               </div>
             </>
           )}

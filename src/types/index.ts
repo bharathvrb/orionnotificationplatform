@@ -69,3 +69,82 @@ export interface ValidationError {
   message: string;
 }
 
+export interface KafkaDetailsResponse {
+  topicName?: string;
+  health?: string;
+  status?: string;
+  message?: string;
+  partitions?: number;
+  replicationFactor?: number;
+  config?: Record<string, string>;
+  consumerGroups?: string[];
+}
+
+export interface KafkaDetailsRequest {
+  topicNames: string[];
+}
+
+export interface KafkaDetailsListResponse {
+  status?: string;
+  message?: string;
+  topicDetails?: KafkaDetailsResponse[];
+}
+
+export interface MongoDBDetailsRequest {
+  eventNames: string[];
+}
+
+export interface Downstream {
+  downstreamId?: string;
+  downstreamName?: string;
+  endpoint?: string;
+  credentialsId?: string;
+  createdTimestamp?: string;
+  updateTimestamp?: string;
+  authenticationType?: string;
+}
+
+export interface Authorization {
+  downstreamId?: string;
+  credentialsId?: string;
+  downstreamName?: string;
+  clientId?: string;
+  clientSecret?: string;
+  grantType?: string;
+  scope?: string;
+}
+
+export interface MongoDBData {
+  schemaId?: string;
+  eventType?: string;
+  schemaType?: string;
+  topic?: string;
+  schemaDefinition?: string;
+  createdDate?: string;
+  updatedDate?: string;
+  downstream?: Downstream[];
+}
+
+export interface RedisData {
+  notificationSchema?: string;
+  authorizations?: string[];
+}
+
+export interface DownstreamDetailWithAuth {
+  downstream?: Downstream;
+  authorization?: Authorization;
+}
+
+export interface EventDetail {
+  eventType?: string;
+  mongoDBData?: MongoDBData;
+  redisData?: RedisData;
+  downstreamDetails?: DownstreamDetailWithAuth[];
+}
+
+export interface MongoDBDetailsResponse {
+  status?: string;
+  message?: string;
+  eventDetails?: EventDetail[];
+}
+
