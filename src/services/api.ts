@@ -119,6 +119,10 @@ export const onboardOnp = async (
     if (request.gitAccessToken) {
       headers['gitAccessToken'] = request.gitAccessToken;
     }
+    
+    // Handle authorization token
+    // If custom authorization is provided, use it (overrides SSO token from interceptor)
+    // Otherwise, the interceptor will add the SSO token
     if (request.authorization) {
       // Prefix "Bearer " if not already present
       const token = request.authorization.trim();
@@ -131,18 +135,44 @@ export const onboardOnp = async (
     if (request.eventName) {
       body.eventName = request.eventName;
     }
-    // Backend expects headerSchema and payloadSchema as String, not parsed JSON
+    // Backend expects headerSchema and payloadSchema as escaped JSON string
+    // Process: Accept pure JSON -> parse -> minify (remove whitespace) -> escape as string
+    // Example: {"type":"object"} -> "{\"type\":\"object\"}"
     if (request.headerSchema) {
-      // If it's already a string, use it; otherwise stringify it
-      body.headerSchema = typeof request.headerSchema === 'string' 
-        ? request.headerSchema 
-        : JSON.stringify(request.headerSchema);
+      try {
+        let parsed: any;
+        if (typeof request.headerSchema === 'string') {
+          // Parse the JSON string (handles both pure JSON and already-escaped strings)
+          const firstParse = JSON.parse(request.headerSchema);
+          // If first parse gives us a string, it was already escaped, parse again
+          parsed = typeof firstParse === 'string' ? JSON.parse(firstParse) : firstParse;
+        } else {
+          parsed = request.headerSchema;
+        }
+        // Minify by stringifying (removes whitespace/newlines) and then escape as string
+        body.headerSchema = JSON.stringify(JSON.stringify(parsed));
+      } catch (error) {
+        // If parsing fails, throw error
+        throw new Error('Invalid headerSchema JSON: ' + (error instanceof Error ? error.message : String(error)));
+      }
     }
     if (request.payloadSchema) {
-      // If it's already a string, use it; otherwise stringify it
-      body.payloadSchema = typeof request.payloadSchema === 'string' 
-        ? request.payloadSchema 
-        : JSON.stringify(request.payloadSchema);
+      try {
+        let parsed: any;
+        if (typeof request.payloadSchema === 'string') {
+          // Parse the JSON string (handles both pure JSON and already-escaped strings)
+          const firstParse = JSON.parse(request.payloadSchema);
+          // If first parse gives us a string, it was already escaped, parse again
+          parsed = typeof firstParse === 'string' ? JSON.parse(firstParse) : firstParse;
+        } else {
+          parsed = request.payloadSchema;
+        }
+        // Minify by stringifying (removes whitespace/newlines) and then escape as string
+        body.payloadSchema = JSON.stringify(JSON.stringify(parsed));
+      } catch (error) {
+        // If parsing fails, throw error
+        throw new Error('Invalid payloadSchema JSON: ' + (error instanceof Error ? error.message : String(error)));
+      }
     }
     if (request.downstreamDetails && request.downstreamDetails.length > 0) {
       // Transform downstreamDetails to match backend types
@@ -203,7 +233,8 @@ export const onboardOnp = async (
 export const fetchKafkaDetails = async (
   request: KafkaDetailsRequest,
   trackingId?: string,
-  environment?: string
+  environment?: string,
+  authorization?: string
 ): Promise<KafkaDetailsListResponse> => {
   try {
     const headers: Record<string, string> = {};
@@ -218,6 +249,12 @@ export const fetchKafkaDetails = async (
     // Add environment header if provided
     if (environment) {
       headers['environment'] = environment;
+    }
+
+    // Add custom authorization token if provided (overrides SSO token from interceptor)
+    if (authorization) {
+      const token = authorization.trim();
+      headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
     }
 
     const response = await apiClient.post<KafkaDetailsListResponse>(
@@ -250,7 +287,8 @@ export const fetchKafkaDetails = async (
 export const fetchMongoDBDetails = async (
   request: MongoDBDetailsRequest,
   trackingId?: string,
-  environment?: string
+  environment?: string,
+  authorization?: string
 ): Promise<MongoDBDetailsResponse> => {
   try {
     const headers: Record<string, string> = {};
@@ -265,6 +303,12 @@ export const fetchMongoDBDetails = async (
     // Add environment header if provided
     if (environment) {
       headers['environment'] = environment;
+    }
+
+    // Add custom authorization token if provided (overrides SSO token from interceptor)
+    if (authorization) {
+      const token = authorization.trim();
+      headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
     }
 
     const response = await apiClient.post<MongoDBDetailsResponse>(
