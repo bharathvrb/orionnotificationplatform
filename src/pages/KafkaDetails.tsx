@@ -95,6 +95,37 @@ export const KafkaDetails: React.FC = () => {
     navigator.clipboard.writeText(text);
   };
 
+  const handleGenerateToken = async () => {
+    if (!environment) {
+      setTokenError('Please select an environment first');
+      return;
+    }
+
+    if (!tokenCredentials.clientId.trim() || !tokenCredentials.clientSecret.trim() || !tokenCredentials.scope.trim()) {
+      setTokenError('Please fill in all fields (Client ID, Client Secret, and Scope)');
+      return;
+    }
+
+    setIsGeneratingToken(true);
+    setTokenError(null);
+
+    try {
+      const token = await generateSatToken(environment as Environment, {
+        clientId: tokenCredentials.clientId,
+        clientSecret: tokenCredentials.clientSecret,
+        scope: tokenCredentials.scope,
+      });
+
+      setAuthorization(token);
+      setShowTokenModal(false);
+      setTokenCredentials({ clientId: '', clientSecret: '', scope: '' });
+    } catch (error) {
+      setTokenError(error instanceof Error ? error.message : 'Failed to generate token');
+    } finally {
+      setIsGeneratingToken(false);
+    }
+  };
+
   const getHealthBadgeColor = (health?: string) => {
     if (!health) return 'bg-gray-100 text-gray-800';
     switch (health.toLowerCase()) {
