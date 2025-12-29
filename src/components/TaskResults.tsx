@@ -105,9 +105,9 @@ export const TaskResults: React.FC<TaskResultsProps> = ({
     }
 
     // Check if there are any errors in the results
-    const hasErrors = results.some(r => r.status === 'Failure' || r.status === 'Error');
+    const hasErrors = results.some(r => r.status === 'Failure');
     const errorMessages = results
-      .filter(r => r.status === 'Failure' || r.status === 'Error')
+      .filter(r => r.status === 'Failure')
       .map(r => r.message);
 
     const downloadData: DownloadData = {
