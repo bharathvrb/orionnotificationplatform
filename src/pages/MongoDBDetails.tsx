@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchMongoDBDetails } from '../services/api';
 import { generateSatToken } from '../services/sat';
+import { downloadAsExcel, type DownloadData } from '../services/download';
 import type { MongoDBDetailsResponse, EventDetail, Environment } from '../types';
 
 const ENVIRONMENT_OPTIONS: Environment[] = [
@@ -43,6 +44,44 @@ export const MongoDBDetails: React.FC = () => {
   });
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const [lastRequestData, setLastRequestData] = useState<any>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [formHasChanged, setFormHasChanged] = useState(false);
+
+  const handleDownload = () => {
+    // Allow download even if there are errors
+    const hasData = mongoDBDetails || lastRequestData || error;
+    if (!hasData) {
+      return;
+    }
+
+    const downloadData: DownloadData = {
+      operation: 'MongoDB Details',
+      timestamp: new Date().toISOString(),
+      request: {
+        endpoint: '/api/mongoDBDetails',
+        method: 'POST',
+        body: lastRequestData || {},
+        queryParams: {
+          environment: environment || '',
+        },
+      },
+      response: {
+        data: mongoDBDetails,
+        error: error || lastError || (mongoDBDetails?.status === 'Failure' ? mongoDBDetails.message : undefined),
+        status: mongoDBDetails?.status === 'Failure' ? 400 : (error ? 500 : 200),
+      },
+      metadata: {
+        eventCount: mongoDBDetails?.eventDetails?.length || 0,
+        environment: environment || 'Not specified',
+        status: error || mongoDBDetails?.status === 'Failure' ? 'Failed' : 'Success',
+        hasError: !!error || mongoDBDetails?.status === 'Failure',
+      },
+    };
+
+    downloadAsExcel(downloadData);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +95,8 @@ export const MongoDBDetails: React.FC = () => {
     setError(null);
     setMongoDBDetails(null);
     setExpandedEvents(new Set());
+    setHasSubmitted(false);
+    setFormHasChanged(false);
 
     try {
       const eventNames = useAll 
@@ -65,19 +106,31 @@ export const MongoDBDetails: React.FC = () => {
             .map(name => name.trim())
             .filter(name => name.length > 0);
 
+      const requestData = { eventNames };
+      setLastRequestData(requestData);
+
       const response = await fetchMongoDBDetails(
-        { eventNames },
+        requestData,
         undefined,
         environment || undefined,
         authorization || undefined
       );
       setMongoDBDetails(response);
+      setLastError(null);
+      setHasSubmitted(true);
+      setFormHasChanged(false);
       if (response.status === 'Failure') {
-        setError(response.message || 'Failed to fetch MongoDB details');
+        const errorMsg = response.message || 'Failed to fetch MongoDB details';
+        setError(errorMsg);
+        setLastError(errorMsg);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch MongoDB details');
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch MongoDB details';
+      setError(errorMsg);
+      setLastError(errorMsg);
       setMongoDBDetails(null);
+      setHasSubmitted(true);
+      setFormHasChanged(false);
     } finally {
       setLoading(false);
     }
@@ -164,8 +217,11 @@ export const MongoDBDetails: React.FC = () => {
                 <select
                   id="environment"
                   value={environment}
-                  onChange={(e) => setEnvironment(e.target.value as Environment)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  onChange={(e) => {
+                    setEnvironment(e.target.value as Environment);
+                    if (hasSubmitted) setFormHasChanged(true);
+                  }}
+                  className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   disabled={loading}
                   required
                 >
@@ -188,7 +244,10 @@ export const MongoDBDetails: React.FC = () => {
                     id="authorization"
                     type="password"
                     value={authorization}
-                    onChange={(e) => setAuthorization(e.target.value)}
+                    onChange={(e) => {
+                      setAuthorization(e.target.value);
+                      if (hasSubmitted) setFormHasChanged(true);
+                    }}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     placeholder="Enter authorization token or generate one"
                     disabled={loading}
@@ -222,11 +281,12 @@ export const MongoDBDetails: React.FC = () => {
                     if (e.target.checked) {
                       setEventNamesInput('');
                     }
+                    if (hasSubmitted) setFormHasChanged(true);
                   }}
                   className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                   disabled={loading}
                 />
-                <label htmlFor="useAll" className="ml-3 text-lg font-semibold text-gray-700">
+                <label htmlFor="useAll" className="ml-3 text-sm font-semibold text-gray-700">
                   Fetch All Events
                 </label>
               </div>
@@ -239,21 +299,21 @@ export const MongoDBDetails: React.FC = () => {
                   <textarea
                     id="eventNames"
                     value={eventNamesInput}
-                    onChange={(e) => setEventNamesInput(e.target.value)}
+                    onChange={(e) => {
+                      setEventNamesInput(e.target.value);
+                      if (hasSubmitted) setFormHasChanged(true);
+                    }}
                     placeholder="e.g., EVENT1, EVENT2, EVENT3"
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     disabled={loading || useAll}
                   />
-                  <p className="mt-1 text-sm text-gray-500">
-                    Enter event names separated by commas, or use "ALL" to fetch all events
-                  </p>
                 </div>
               )}
 
               <button
                 type="submit"
-                disabled={loading || !environment || (!useAll && !eventNamesInput.trim())}
+                disabled={loading || !environment || (!useAll && !eventNamesInput.trim()) || (hasSubmitted && !formHasChanged)}
                 className="w-full px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-semibold hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Fetching...' : useAll ? 'Fetch All Events' : 'Fetch Details'}
@@ -263,17 +323,49 @@ export const MongoDBDetails: React.FC = () => {
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800">{error}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-red-800">{error}</p>
+                {(error || lastRequestData) && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDownload}
+                      className="px-4 py-2 text-sm font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-all shadow-sm hover:shadow border border-primary-400 flex items-center gap-2"
+                      title="Download error details as Excel"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Download Excel
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {mongoDBDetails && mongoDBDetails.eventDetails && mongoDBDetails.eventDetails.length > 0 && (
             <div className="space-y-6">
               <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg p-4 border border-primary-200">
-                <h2 className="text-2xl font-bold text-primary-700 mb-2">Results</h2>
-                <p className="text-primary-600">
-                  Found {mongoDBDetails.eventDetails.length} event(s)
-                </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-primary-700 mb-2">Results</h2>
+                    <p className="text-primary-600">
+                      Found {mongoDBDetails.eventDetails.length} event(s)
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDownload}
+                      className="px-4 py-2 text-sm font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-all shadow-sm hover:shadow border border-primary-400 flex items-center gap-2"
+                      title="Download as Excel"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Download Excel
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {mongoDBDetails.eventDetails.map((eventDetail: EventDetail, index: number) => (

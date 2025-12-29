@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
 import type { TaskResult } from '../types';
+import { downloadAsExcel, type DownloadData } from '../services/download';
 
 interface TaskResultsProps {
   results: TaskResult[];
   isLoading?: boolean;
+  requestData?: any;
+  responseData?: any;
+  operationName?: string;
 }
 
 export const TaskResults: React.FC<TaskResultsProps> = ({
   results,
   isLoading = false,
+  requestData,
+  responseData,
+  operationName = 'ONP Event Onboard',
 }) => {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const total = results.length;
@@ -90,6 +97,44 @@ export const TaskResults: React.FC<TaskResultsProps> = ({
     }
   };
 
+  const handleDownload = () => {
+    // Allow download even if there are errors or failures
+    const hasData = requestData || responseData || results.length > 0;
+    if (!hasData) {
+      return;
+    }
+
+    // Check if there are any errors in the results
+    const hasErrors = results.some(r => r.status === 'Failure' || r.status === 'Error');
+    const errorMessages = results
+      .filter(r => r.status === 'Failure' || r.status === 'Error')
+      .map(r => r.message);
+
+    const downloadData: DownloadData = {
+      operation: operationName,
+      timestamp: new Date().toISOString(),
+      request: {
+        endpoint: '/api/onboardonp',
+        method: 'POST',
+        body: requestData || {},
+      },
+      response: {
+        data: responseData || { tasks: results },
+        error: hasErrors ? errorMessages.join('; ') : undefined,
+      },
+      metadata: {
+        totalTasks: results.length,
+        successCount,
+        failureCount,
+        partialCount,
+        hasErrors,
+        status: hasErrors ? 'Failed' : (failureCount > 0 ? 'Partial' : 'Success'),
+      },
+    };
+
+    downloadAsExcel(downloadData);
+  };
+
   if (isLoading) {
     return (
       <div className="bg-white border-2 border-primary-400 rounded-xl shadow-2xl p-6">
@@ -121,10 +166,24 @@ export const TaskResults: React.FC<TaskResultsProps> = ({
 
   return (
     <div className="bg-white border-2 border-primary-400 rounded-xl shadow-2xl p-6">
-      <h3 className="text-lg font-semibold text-primary-700 mb-4 flex items-center">
-        <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-        Task Results
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-primary-700 flex items-center">
+          <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
+          Task Results
+        </h3>
+        {(results.length > 0 || requestData || responseData) && (
+          <button
+            onClick={handleDownload}
+            className="px-4 py-2 text-sm font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-all shadow-sm hover:shadow border border-primary-400 flex items-center gap-2"
+            title="Download as Excel (includes errors)"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Download Excel
+          </button>
+        )}
+      </div>
 
       <div className="mb-6 flex flex-wrap gap-2">
         <span className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm font-semibold border border-primary-300">

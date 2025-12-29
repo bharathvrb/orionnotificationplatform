@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: process.env.VITE_API_BASE_URL || 'http://onppoc-qa.as-g8.cf.comcast.net/onp/v1',
+        target: process.env.VITE_API_BASE_URL || 'https://onppoc-qa.as-g8.cf.comcast.net/onp/v1',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
         configure: (proxy, _options) => {

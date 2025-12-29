@@ -14,7 +14,7 @@ const distPath = join(__dirname, 'dist');
 const indexHtmlPath = join(distPath, 'index.html');
 
 // Get backend API URL from environment variable
-const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://onppoc-qa.as-g8.cf.comcast.net/onp/v1';
+const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://onppoc-qa.as-g8.cf.comcast.net/onp/v1';
 
 // Parse JSON bodies for proxy requests
 app.use(express.json());

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchKafkaDetails } from '../services/api';
 import { generateSatToken } from '../services/sat';
+import { downloadAsExcel, type DownloadData } from '../services/download';
 import type { KafkaDetailsResponse, KafkaDetailsListResponse, Environment } from '../types';
 
 const ENVIRONMENT_OPTIONS: Environment[] = [
@@ -43,6 +44,44 @@ export const KafkaDetails: React.FC = () => {
   });
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const [lastRequestData, setLastRequestData] = useState<any>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [formHasChanged, setFormHasChanged] = useState(false);
+
+  const handleDownload = () => {
+    // Allow download even if there are errors
+    const hasData = kafkaDetails || lastRequestData || error;
+    if (!hasData) {
+      return;
+    }
+
+    const downloadData: DownloadData = {
+      operation: 'Kafka Details',
+      timestamp: new Date().toISOString(),
+      request: {
+        endpoint: '/api/kafkaDetails',
+        method: 'POST',
+        body: lastRequestData || {},
+        queryParams: {
+          environment: environment || '',
+        },
+      },
+      response: {
+        data: kafkaDetails,
+        error: error || lastError || (kafkaDetails?.status === 'Failure' ? kafkaDetails.message : undefined),
+        status: kafkaDetails?.status === 'Failure' ? 400 : (error ? 500 : 200),
+      },
+      metadata: {
+        topicCount: kafkaDetails?.topicDetails?.length || 0,
+        environment: environment || 'Not specified',
+        status: error || kafkaDetails?.status === 'Failure' ? 'Failed' : 'Success',
+        hasError: !!error || kafkaDetails?.status === 'Failure',
+      },
+    };
+
+    downloadAsExcel(downloadData);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +95,8 @@ export const KafkaDetails: React.FC = () => {
     setKafkaDetails(null);
     setExpandedTopics(new Set());
     setSearchTerm('');
+    setHasSubmitted(false);
+    setFormHasChanged(false);
 
     try {
       const topicNames = topicNamesInput
@@ -63,19 +104,31 @@ export const KafkaDetails: React.FC = () => {
         .map(name => name.trim())
         .filter(name => name.length > 0);
 
+      const requestData = { topicNames };
+      setLastRequestData(requestData);
+
       const response = await fetchKafkaDetails(
-        { topicNames },
+        requestData,
         undefined,
         environment || undefined,
         authorization || undefined
       );
       setKafkaDetails(response);
+      setLastError(null);
+      setHasSubmitted(true);
+      setFormHasChanged(false);
       if (response.status === 'Failure') {
-        setError(response.message || 'Failed to fetch Kafka details');
+        const errorMsg = response.message || 'Failed to fetch Kafka details';
+        setError(errorMsg);
+        setLastError(errorMsg);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch Kafka details');
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch Kafka details';
+      setError(errorMsg);
+      setLastError(errorMsg);
       setKafkaDetails(null);
+      setHasSubmitted(true);
+      setFormHasChanged(false);
     } finally {
       setLoading(false);
     }
@@ -189,8 +242,11 @@ export const KafkaDetails: React.FC = () => {
                 <select
                   id="environment"
                   value={environment}
-                  onChange={(e) => setEnvironment(e.target.value as Environment)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  onChange={(e) => {
+                    setEnvironment(e.target.value as Environment);
+                    if (hasSubmitted) setFormHasChanged(true);
+                  }}
+                  className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   disabled={loading}
                   required
                 >
@@ -213,7 +269,10 @@ export const KafkaDetails: React.FC = () => {
                     id="authorization"
                     type="password"
                     value={authorization}
-                    onChange={(e) => setAuthorization(e.target.value)}
+                    onChange={(e) => {
+                      setAuthorization(e.target.value);
+                      if (hasSubmitted) setFormHasChanged(true);
+                    }}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     placeholder="Enter authorization token or generate one"
                     disabled={loading}
@@ -244,20 +303,20 @@ export const KafkaDetails: React.FC = () => {
                 <textarea
                   id="topicNames"
                   value={topicNamesInput}
-                  onChange={(e) => setTopicNamesInput(e.target.value)}
+                  onChange={(e) => {
+                    setTopicNamesInput(e.target.value);
+                    if (hasSubmitted) setFormHasChanged(true);
+                  }}
                   placeholder="e.g., onp-cbgupdate-topic, onp-order-topic, onp-payment-topic"
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   disabled={loading}
                 />
-                <p className="mt-1 text-sm text-gray-500">
-                  Enter topic names separated by commas
-                </p>
               </div>
 
               <button
                 type="submit"
-                disabled={loading || !environment || !topicNamesInput.trim()}
+                disabled={loading || !environment || !topicNamesInput.trim() || (hasSubmitted && !formHasChanged)}
                 className="w-full px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-semibold hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {loading ? (
@@ -277,11 +336,27 @@ export const KafkaDetails: React.FC = () => {
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
-              <div className="flex items-center">
-                <svg className="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                <p className="text-red-800 font-medium">{error}</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-red-800 font-medium">{error}</p>
+                </div>
+                {(error || lastRequestData) && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDownload}
+                      className="px-4 py-2 text-sm font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-all shadow-sm hover:shadow border border-primary-400 flex items-center gap-2"
+                      title="Download error details as Excel"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Download Excel
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -296,6 +371,20 @@ export const KafkaDetails: React.FC = () => {
                     <p className="text-primary-600 mt-1">
                       Found {kafkaDetails.topicDetails.length} topic(s)
                     </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleDownload}
+                        className="px-4 py-2 text-sm font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-all shadow-sm hover:shadow border border-primary-400 flex items-center gap-2"
+                        title="Download as Excel"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Download Excel
+                      </button>
+                    </div>
                   </div>
                   <div className="flex items-center gap-4">
                     {kafkaDetails.topicDetails.filter(t => t.health?.toLowerCase() === 'healthy').length > 0 && (

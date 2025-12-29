@@ -51,6 +51,10 @@ export const OnboardForm: React.FC = () => {
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [taskResults, setTaskResults] = useState<TaskResult[]>([]);
+  const [lastRequestData, setLastRequestData] = useState<any>(null);
+  const [lastResponseData, setLastResponseData] = useState<any>(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [formHasChanged, setFormHasChanged] = useState(false);
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [tokenCredentials, setTokenCredentials] = useState({
     clientId: '',
@@ -77,6 +81,10 @@ export const OnboardForm: React.FC = () => {
 
   const updateRequest = (updates: Partial<OnboardRequest>) => {
     setRequest((prev) => ({ ...prev, ...updates }));
+    // Mark form as changed if it was previously submitted
+    if (hasSubmitted) {
+      setFormHasChanged(true);
+    }
   };
 
   const handleCriteriaChange = (criteria: RequestCriteria, checked: boolean) => {
@@ -87,6 +95,10 @@ export const OnboardForm: React.FC = () => {
         : current.filter((c) => c !== criteria);
       return { ...prev, requestCriteria: updated };
     });
+    // Mark form as changed if it was previously submitted
+    if (hasSubmitted) {
+      setFormHasChanged(true);
+    }
   };
 
   const validate = () => {
@@ -103,15 +115,24 @@ export const OnboardForm: React.FC = () => {
     mutationFn: onboardOnp,
     onSuccess: (data) => {
       setTaskResults(data.tasks || []);
+      setLastResponseData(data);
+      setHasSubmitted(true);
+      setFormHasChanged(false);
     },
     onError: (error: Error) => {
-      setTaskResults([
-        {
-          task: 'Error',
-          status: 'Failure',
-          message: error.message,
-        },
-      ]);
+      const errorResult = {
+        task: 'Error',
+        status: 'Failure' as const,
+        message: error.message,
+      };
+      setTaskResults([errorResult]);
+      setLastResponseData({ 
+        error: error.message,
+        tasks: [errorResult],
+        status: 'Failure',
+      });
+      setHasSubmitted(true);
+      setFormHasChanged(false);
     },
   });
 
@@ -169,6 +190,8 @@ export const OnboardForm: React.FC = () => {
       environment: environment as Environment,
     };
 
+    // Store request data for download
+    setLastRequestData(requestWithEnvironment);
     mutation.mutate(requestWithEnvironment);
   };
 
@@ -212,8 +235,11 @@ export const OnboardForm: React.FC = () => {
               </label>
               <select
                 value={environment}
-                onChange={(e) => setEnvironment(e.target.value as Environment)}
-                className="w-full px-4 py-3 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900 text-base font-medium transition-all"
+                onChange={(e) => {
+                  setEnvironment(e.target.value as Environment);
+                  if (hasSubmitted) setFormHasChanged(true);
+                }}
+                className="w-full px-4 py-3 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900 text-sm font-medium transition-all"
               >
                 <option value="">-- Select Environment --</option>
                 {ENVIRONMENT_OPTIONS.map((env) => (
@@ -568,9 +594,9 @@ export const OnboardForm: React.FC = () => {
             <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
               <button
                 type="submit"
-                disabled={!isValid || mutation.isPending}
+                disabled={!isValid || mutation.isPending || (hasSubmitted && !formHasChanged)}
                 className={`w-full px-6 py-4 rounded-lg font-semibold text-lg transition-all transform ${
-                  isValid && !mutation.isPending
+                  isValid && !mutation.isPending && (!hasSubmitted || formHasChanged)
                     ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
@@ -591,7 +617,13 @@ export const OnboardForm: React.FC = () => {
 
             {/* Task Results */}
             {(mutation.isPending || taskResults.length > 0) && (
-              <TaskResults results={taskResults} isLoading={mutation.isPending} />
+              <TaskResults 
+                results={taskResults} 
+                isLoading={mutation.isPending}
+                requestData={lastRequestData}
+                responseData={lastResponseData}
+                operationName="ONP Event Onboard"
+              />
             )}
           </div>
         </form>

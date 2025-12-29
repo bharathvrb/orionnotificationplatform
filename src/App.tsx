@@ -18,6 +18,9 @@ const MongoDBDetails = React.lazy(() =>
 const KafkaDetails = React.lazy(() => 
   import('./pages/KafkaDetails').then(module => ({ default: module.KafkaDetails }))
 );
+const UserGuide = React.lazy(() => 
+  import('./pages/UserGuide').then(module => ({ default: module.UserGuide }))
+);
 
 function App() {
   return (
@@ -42,6 +45,7 @@ function App() {
             <Route path="/events" element={<ProtectedRoute><ViewEvents /></ProtectedRoute>} />
             <Route path="/mongodb" element={<ProtectedRoute><MongoDBDetails /></ProtectedRoute>} />
             <Route path="/kafka" element={<ProtectedRoute><KafkaDetails /></ProtectedRoute>} />
+            <Route path="/guide" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
           </Routes>
         </React.Suspense>
       </AuthProvider>

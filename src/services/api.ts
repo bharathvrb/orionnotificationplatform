@@ -12,9 +12,13 @@ export const apiClient = axios.create();
 // Add auth token to requests
 apiClient.interceptors.request.use(
   async (config) => {
-    const token = await getValidAccessToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Only add token if Authorization header is not already set
+    // This allows custom tokens from forms to take precedence
+    if (!config.headers.Authorization) {
+      const token = await getValidAccessToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -200,10 +204,20 @@ export const onboardOnp = async (
     // Add branchName if available (backend supports it but frontend doesn't currently collect it)
     // This can be added to the form later if needed
 
+    // Ensure Authorization header is properly set if provided
+    const requestConfig: any = { headers };
+    
+    // Log for debugging (remove in production if needed)
+    if (headers.Authorization) {
+      console.log('Sending request with Authorization header');
+    } else {
+      console.warn('No Authorization header in request - token may be missing');
+    }
+
     const response = await apiClient.post<ONPEventResponse>(
       `${API_BASE_URL}/onboardonp`,
       body,
-      { headers }
+      requestConfig
     );
 
     // Transform backend response to frontend expected format
@@ -255,6 +269,13 @@ export const fetchKafkaDetails = async (
     if (authorization) {
       const token = authorization.trim();
       headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    }
+
+    // Log for debugging
+    if (headers.Authorization) {
+      console.log('Sending Kafka details request with Authorization header');
+    } else {
+      console.warn('No Authorization header in Kafka details request - token may be missing');
     }
 
     const response = await apiClient.post<KafkaDetailsListResponse>(
@@ -309,6 +330,13 @@ export const fetchMongoDBDetails = async (
     if (authorization) {
       const token = authorization.trim();
       headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    }
+
+    // Log for debugging
+    if (headers.Authorization) {
+      console.log('Sending MongoDB details request with Authorization header');
+    } else {
+      console.warn('No Authorization header in MongoDB details request - token may be missing');
     }
 
     const response = await apiClient.post<MongoDBDetailsResponse>(
