@@ -297,77 +297,83 @@ export const MongoDBDetails: React.FC = () => {
             Back to Home
           </button>
           <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 rounded-xl shadow-2xl p-6 border-2 border-primary-600">
-            <h1 className="text-2xl font-bold text-white mb-2 drop-shadow-lg">MongoDB & Redis Details</h1>
+            <h1 className="text-2xl font-bold text-white mb-2 drop-shadow-lg">View MongoDB and Redis Details</h1>
             <p className="text-white text-lg font-medium">
-              View MongoDB and Redis data for event types with linked authorization details
+              View events present in MongoDB and Redis cache with complete event information
             </p>
+          </div>
+        </div>
+
+        {/* Environment Selection and Token Generation Box */}
+        <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
+          <div className="space-y-4">
+            {/* Environment Selection */}
+            <div>
+              <label htmlFor="environment" className="block text-sm font-medium text-gray-700 mb-2">
+                Environment *
+              </label>
+              <select
+                id="environment"
+                value={environment}
+                onChange={(e) => {
+                  setEnvironment(e.target.value as Environment);
+                  if (hasSubmitted) setFormHasChanged(true);
+                }}
+                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                disabled={loading}
+                required
+              >
+                <option value="">-- Select Environment --</option>
+                {ENVIRONMENT_OPTIONS.map((env) => (
+                  <option key={env} value={env}>
+                    {env}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Authorization Token */}
+            <div>
+              <label htmlFor="authorization" className="block text-sm font-medium text-gray-700 mb-2">
+                Authorization Token
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="authorization"
+                  type="password"
+                  value={authorization}
+                  onChange={(e) => {
+                    setAuthorization(e.target.value);
+                    if (hasSubmitted) setFormHasChanged(true);
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Enter authorization token or generate one"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowTokenModal(true)}
+                  disabled={!environment || loading}
+                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                    environment && !loading
+                      ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                  title={!environment ? 'Please select an environment first' : 'Generate token'}
+                >
+                  Generate Token
+                </button>
+              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                Optional: Generate a token using SAT service or enter a custom token
+              </p>
+            </div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8">
           <form onSubmit={handleSubmit} className="mb-8">
             <div className="space-y-4">
-              <div>
-                <label htmlFor="environment" className="block text-sm font-medium text-gray-700 mb-2">
-                  Environment *
-                </label>
-                <select
-                  id="environment"
-                  value={environment}
-                  onChange={(e) => {
-                    setEnvironment(e.target.value as Environment);
-                    if (hasSubmitted) setFormHasChanged(true);
-                  }}
-                  className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  disabled={loading}
-                  required
-                >
-                  <option value="">-- Select Environment --</option>
-                  {ENVIRONMENT_OPTIONS.map((env) => (
-                    <option key={env} value={env}>
-                      {env}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Authorization Token */}
-              <div>
-                <label htmlFor="authorization" className="block text-sm font-medium text-gray-700 mb-2">
-                  Authorization Token
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    id="authorization"
-                    type="password"
-                    value={authorization}
-                    onChange={(e) => {
-                      setAuthorization(e.target.value);
-                      if (hasSubmitted) setFormHasChanged(true);
-                    }}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Enter authorization token or generate one"
-                    disabled={loading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowTokenModal(true)}
-                    disabled={!environment || loading}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                      environment && !loading
-                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                    title={!environment ? 'Please select an environment first' : 'Generate token'}
-                  >
-                    Generate Token
-                  </button>
-                </div>
-                <p className="mt-1 text-sm text-gray-500">
-                  Optional: Generate a token using SAT service or enter a custom token
-                </p>
-              </div>
-
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -466,6 +472,23 @@ export const MongoDBDetails: React.FC = () => {
                         </span>
                       )}
                     </div>
+                    <p className={`text-xs mt-2 ${
+                      error.toLowerCase().includes('warning') 
+                        ? 'text-yellow-600' 
+                        : 'text-red-600'
+                    }`}>
+                      Need to update an event?{' '}
+                      <button
+                        onClick={() => navigate('/update')}
+                        className={`${
+                          error.toLowerCase().includes('warning') 
+                            ? 'text-yellow-700 hover:text-yellow-900' 
+                            : 'text-red-700 hover:text-red-900'
+                        } underline font-normal`}
+                      >
+                        Go to Update Event page
+                      </button>
+                    </p>
                   </div>
                 </div>
                 {(error || lastRequestData) && (
@@ -511,6 +534,15 @@ export const MongoDBDetails: React.FC = () => {
                           {mongoDBDetails.message && ` - ${mongoDBDetails.message}`}
                         </p>
                       )}
+                      <p className="text-xs text-gray-500 mt-2">
+                        Need to update an event?{' '}
+                        <button
+                          onClick={() => navigate('/update')}
+                          className="text-primary-600 hover:text-primary-800 underline font-normal"
+                        >
+                          Go to Update Event page
+                        </button>
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 ml-4">
@@ -575,9 +607,9 @@ export const MongoDBDetails: React.FC = () => {
           {!mongoDBDetails && !loading && !error && (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🍃</div>
-              <h2 className="text-2xl font-bold text-primary-700 mb-4">MongoDB & Redis Details</h2>
+              <h2 className="text-2xl font-bold text-primary-700 mb-4">View MongoDB and Redis Details</h2>
               <p className="text-gray-600 mb-6">
-                Enter event names above or select "Fetch All" to view MongoDB and Redis data with linked authorization details.
+                Enter event names above or select "Fetch All" to view events present in MongoDB and Redis cache.
               </p>
             </div>
           )}

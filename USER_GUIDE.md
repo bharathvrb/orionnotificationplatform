@@ -6,12 +6,13 @@
 3. [Home Page](#home-page)
 4. [ONP Event Onboarding](#onp-event-onboarding)
 5. [View Event Details](#view-event-details)
-6. [MongoDB Details](#mongodb-details)
-7. [Kafka Details](#kafka-details)
-8. [Download Functionality](#download-functionality)
-9. [Authentication & Authorization](#authentication--authorization)
-10. [Troubleshooting](#troubleshooting)
-11. [Best Practices](#best-practices)
+6. [Update Event](#update-event)
+7. [MongoDB Details](#mongodb-details)
+8. [Kafka Details](#kafka-details)
+9. [Download Functionality](#download-functionality)
+10. [Authentication & Authorization](#authentication--authorization)
+11. [Troubleshooting](#troubleshooting)
+12. [Best Practices](#best-practices)
 
 ---
 
@@ -282,21 +283,97 @@ When available, you'll be able to:
 
 ---
 
+## Update Event
+
+The Update Event page allows you to update existing event entries in MongoDB and refresh Redis cache.
+
+### Environment Selection and Token Generation
+
+The page features a separate box at the top for environment selection and token generation.
+
+**Environment Selection Box:**
+- Select the environment from the dropdown (same options as Event Onboarding)
+- This is a required field
+
+**Authorization Token:**
+- Use "Generate Token" button to create a token using SAT service
+  - Requires: Client ID, Client Secret, and Scope
+  - Token is automatically populated after generation
+- Or enter a custom Bearer token manually
+- This field is optional but recommended for secure access
+
+### Step 1: Enter Event Details
+
+**Event Name***: 
+- Enter the name of an existing event that you want to update
+- The event must already exist in the selected environment
+- This is a required field
+
+**Subscriber Name**: 
+- Optional: Enter subscriber name if you want to update subscriber-specific configurations
+
+### Step 2: Configure Downstream Details
+
+Add or modify downstream configurations:
+- **Name**: Downstream system name
+- **Endpoint**: API endpoint URL
+- **Client ID**: OAuth client ID
+- **Client Secret**: OAuth client secret
+- **Scope**: OAuth scope
+- **Subscriber Name**: Subscriber for this downstream
+
+### Step 3: Update Schemas (Optional)
+
+**Header Schema**: 
+- Update the JSON schema for event headers
+- Use the JSON editor with syntax highlighting
+
+**Payload Schema**: 
+- Update the JSON schema for event payloads
+- Similar format to Header Schema
+
+### Step 4: Submit Update
+
+1. Review all fields and validation status
+2. Click "Update Event" button
+3. The button will be disabled after submission
+4. To resubmit, edit any field to re-enable the button
+
+### Step 5: View Results
+
+After submission, the Task Results panel displays:
+- **Success** (Green): Update completed successfully
+- **Failure** (Red): Update failed with error message
+- **Partial** (Yellow): Update completed with warnings
+
+### Accessing from MongoDB Details
+
+You can also navigate to the Update Event page from the MongoDB Details page:
+- After viewing MongoDB/Redis details, a subtle link appears in the Results Summary
+- Click "Go to Update Event page" to navigate directly
+
+---
+
 ## MongoDB Details
 
 The MongoDB Details page allows you to query and view MongoDB and Redis data for specific events.
 
-### Step 1: Select Environment
+### Environment Selection and Token Generation
 
-Choose the environment from the dropdown (same options as Event Onboarding).
+The page features a separate box at the top for environment selection and token generation, similar to the Update Event page.
 
-### Step 2: Authorization
+**Environment Selection Box:**
+- Select the environment from the dropdown (same options as Event Onboarding)
+- This is a required field
 
-Provide an authorization token:
-- Use "Generate Token" for SAT service
+**Authorization Token:**
+- Use "Generate Token" button to create a token using SAT service
+  - Requires: Client ID, Client Secret, and Scope
+  - Token is automatically populated after generation
 - Or enter a custom Bearer token manually
+- This field is optional but recommended for secure access
 
-### Step 3: Specify Events
+### Step 1: Specify Events
 
 You have two options:
 
@@ -309,13 +386,13 @@ You have two options:
    - Example: `EVENT1, EVENT2, EVENT3`
    - The "Fetch All Events" checkbox will be disabled
 
-### Step 4: Submit Query
+### Step 2: Submit Query
 
 1. Click "Fetch Details" (or "Fetch All Events" if checkbox is selected)
 2. The button will be disabled after submission
 3. Edit any input to re-enable the button
 
-### Step 5: View Results
+### Step 3: View Results
 
 Results are displayed in expandable cards:
 
@@ -327,6 +404,14 @@ Results are displayed in expandable cards:
   - Subscriber information
 
 Click on an event card to expand and view detailed information.
+
+### Update Event Option
+
+After submitting a query (whether successful or with errors), if you need to update any event:
+- A subtle link appears in the Results Summary section (for successful responses) or in the Error/Warning section (for error responses): "Go to Update Event page"
+- Click the link to navigate to the Update Event page
+- This allows you to update existing event entries in MongoDB and refresh Redis cache
+- The link is available for both success and error responses, so you can update events even if the query encountered issues
 
 ### Search Functionality
 
@@ -348,29 +433,43 @@ Available even if the query fails, including error information.
 
 The Kafka Details page allows you to monitor Kafka topics and view topic configurations.
 
-### Step 1: Select Environment
+### Environment Selection and Token Generation
 
-Choose the environment from the dropdown (same options as Event Onboarding).
+The page features a separate box at the top for environment selection and token generation, similar to the Update Event page.
 
-### Step 2: Authorization
+**Environment Selection Box:**
+- Select the environment from the dropdown (same options as Event Onboarding)
+- This is a required field
 
-Provide an authorization token:
-- Use "Generate Token" for SAT service
+**Authorization Token:**
+- Use "Generate Token" button to create a token using SAT service
+  - Requires: Client ID, Client Secret, and Scope
+  - Token is automatically populated after generation
 - Or enter a custom Bearer token manually
+- This field is optional but recommended for secure access
 
-### Step 3: Enter Topic Names
+### Step 1: Specify Topics
 
-Enter Kafka topic names separated by commas:
-- Example: `topic1, topic2, topic3`
-- You can query multiple topics at once
+You have two options:
 
-### Step 4: Submit Query
+1. **Fetch All Topics**:
+   - Check the "Fetch All Topics" checkbox
+   - This will retrieve details for all topics in the selected environment
+   - The topic names input field will be disabled
+
+2. **Specific Topics**:
+   - Enter Kafka topic names separated by commas
+   - Example: `topic1, topic2, topic3`
+   - You can query multiple topics at once
+   - The "Fetch All Topics" checkbox will be disabled
+
+### Step 2: Submit Query
 
 1. Click "Fetch Details"
 2. The button will be disabled after submission
 3. Edit any input to re-enable the button
 
-### Step 5: View Results
+### Step 3: View Results
 
 Results are displayed in expandable cards:
 

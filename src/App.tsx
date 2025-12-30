@@ -9,6 +9,9 @@ import { Login } from './pages/Login';
 const OnboardForm = React.lazy(() => 
   import('./components/OnboardForm').then(module => ({ default: module.OnboardForm }))
 );
+const UpdateEventForm = React.lazy(() => 
+  import('./components/UpdateEventForm').then(module => ({ default: module.UpdateEventForm }))
+);
 const ViewEvents = React.lazy(() => 
   import('./pages/ViewEvents').then(module => ({ default: module.ViewEvents }))
 );
@@ -42,6 +45,8 @@ function App() {
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/onboard" element={<ProtectedRoute><OnboardForm /></ProtectedRoute>} />
             <Route path="/onboardonp" element={<ProtectedRoute><OnboardForm /></ProtectedRoute>} />
+            <Route path="/update" element={<ProtectedRoute><UpdateEventForm /></ProtectedRoute>} />
+            <Route path="/updateonp" element={<ProtectedRoute><UpdateEventForm /></ProtectedRoute>} />
             <Route path="/events" element={<ProtectedRoute><ViewEvents /></ProtectedRoute>} />
             <Route path="/mongodb" element={<ProtectedRoute><MongoDBDetails /></ProtectedRoute>} />
             <Route path="/kafka" element={<ProtectedRoute><KafkaDetails /></ProtectedRoute>} />

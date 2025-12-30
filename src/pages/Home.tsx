@@ -72,34 +72,48 @@ export const Home: React.FC = () => {
     </svg>
   );
 
+  const UpdateIcon = () => (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+
   const actionCards = [
     {
-      title: 'New ONP Event Onboarding',
+      title: 'New Event Onboarding',
       description: 'Configure and onboard new events to the platform with ease',
       iconComponent: OnboardIcon,
       gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
       onClick: () => navigate('/onboard'),
     },
     {
-      title: 'View Event Details',
-      description: 'Browse and search existing event configurations',
-      iconComponent: ViewEventsIcon,
-      gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-      onClick: () => navigate('/events'),
-    },
-    {
-      title: 'Check MongoDB Details',
-      description: 'View MongoDB connection and data details',
+      title: 'View MongoDB and Redis Details',
+      description: 'View events present in MongoDB and Redis cache with complete event information',
       iconComponent: MongoDBIcon,
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       onClick: () => navigate('/mongodb'),
     },
     {
-      title: 'Check Kafka Details',
-      description: 'Monitor Kafka topics and consumer groups',
+      title: 'Update Event',
+      description: 'Update existing event entries in MongoDB and refresh Redis cache',
+      iconComponent: UpdateIcon,
+      gradient: 'linear-gradient(135deg, #166534 0%, #14532d 100%)',
+      onClick: () => navigate('/update'),
+    },
+    {
+      title: 'View Kafka Details',
+      description: 'View event configuration present in Kafka including topics, consumer groups, and related settings',
       iconComponent: KafkaIcon,
       gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
       onClick: () => navigate('/kafka'),
+    },
+    {
+      title: 'View Complete Event Information',
+      description: 'Browse and view all event configurations with detailed information',
+      iconComponent: ViewEventsIcon,
+      gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+      onClick: () => navigate('/events'),
     },
   ];
 
@@ -132,6 +146,16 @@ export const Home: React.FC = () => {
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.8; }
+        }
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
       `}</style>
       
@@ -472,6 +496,57 @@ export const Home: React.FC = () => {
                     />
                   </div>
                 </div>
+                <div style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                  borderRadius: '1rem',
+                  border: '1px solid rgba(245, 158, 11, 0.2)',
+                  boxShadow: '0 20px 30px -15px rgba(0, 0, 0, 0.15)',
+                  padding: '0.75rem'
+                }}>
+                  <div style={{ 
+                    fontSize: '0.95rem', 
+                    fontWeight: 600, 
+                    color: '#92400e',
+                    marginBottom: '0.75rem'
+                  }}>ONP Event Onboarding Steps</div>
+                  <div style={{
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '0.75rem',
+                    padding: '0.5rem',
+                    border: '1px solid rgba(245, 158, 11, 0.15)',
+                    textAlign: 'center',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    minHeight: '200px'
+                  }}>
+                    <img
+                      src="/images/onp-onboarding-steps.png"
+                      alt="ONP Event Onboarding Steps: INSERT MONGODB AUTHORIZATION/NOTIFICATION SCHEMA, REFRESH REDIS CACHE, CREATE DEPLOYMENT MANIFEST FILES, CREATE ORION PROPERTIES FILES, CREATE KAFKA TOPIC, UPDATE VAULT CONCOURSE-CI, FALLBACK DB ENTRY, CREATE CONCOURSE PIPELINE AND DEPLOY, PERFORM TESTING"
+                      onClick={() => setSelectedImage("/images/onp-onboarding-steps.png")}
+                      style={{ 
+                        maxWidth: '100%', 
+                        height: 'auto',
+                        borderRadius: '0.5rem', 
+                        border: '1px solid rgba(245, 158, 11, 0.1)',
+                        cursor: 'pointer',
+                        transition: 'opacity 0.2s ease',
+                        display: 'block',
+                        objectFit: 'contain'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.opacity = '0.9';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = '1';
+                      }}
+                      onError={(e) => {
+                        console.error('Image failed to load:', e.currentTarget.src);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* References Section */}
@@ -582,124 +657,215 @@ export const Home: React.FC = () => {
           )}
         </div>
 
-        {/* Action Cards */}
+        {/* Action Cards - Advanced Modern Layout */}
         <div style={{ marginBottom: '0', width: '100%' }}>
-          <h2 style={{ 
-            fontSize: '1.5rem', 
-            fontWeight: '700', 
-            color: 'white', 
-            marginBottom: '1.5rem', 
+          <div style={{ 
             textAlign: 'center', 
-            textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)',
-            letterSpacing: '-0.01em'
+            marginBottom: '3rem' 
           }}>
-            Platform Actions
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-            {actionCards.map((card, index) => (
+            <h2 style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: '700', 
+              color: 'white', 
+              marginBottom: '0', 
+              textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)',
+              letterSpacing: '-0.01em'
+            }}>
+              Platform Actions
+            </h2>
+          </div>
+          
+          {/* Modern Grid Layout with Staggered Cards */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+            gap: '1.75rem',
+            maxWidth: '1400px',
+            margin: '0 auto'
+          }}>
+            {actionCards.map((card, index) => {
+              const isComingSoon = card.title === 'View Complete Event Information';
+              const isFeatured = index === 0; // First card is featured/larger
+              
+              return (
               <div
                 key={index}
                 onClick={card.onClick}
                 style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '1rem',
-                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  padding: '1.75rem',
+                  backgroundColor: isComingSoon 
+                    ? 'rgba(255, 255, 255, 0.4)' 
+                    : 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(20px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                  borderRadius: '1.5rem',
+                  boxShadow: isComingSoon 
+                    ? '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5)' 
+                    : '0 20px 60px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
+                  border: '1px solid rgba(255, 255, 255, 0.4)',
+                  padding: isFeatured ? '2rem' : '1.75rem',
                   cursor: 'pointer',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  opacity: isComingSoon ? 0.5 : 1,
+                  gridRow: isFeatured ? 'span 1' : 'span 1',
+                  animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-                  e.currentTarget.style.boxShadow = '0 25px 35px -5px rgba(0, 0, 0, 0.25), 0 15px 15px -5px rgba(0, 0, 0, 0.15)';
+                  if (!isComingSoon) {
+                    e.currentTarget.style.transform = 'translateY(-12px) scale(1.03)';
+                    e.currentTarget.style.boxShadow = '0 32px 80px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.7)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                    const indicator = e.currentTarget.querySelector('.card-indicator') as HTMLElement;
+                    if (indicator) {
+                      indicator.style.opacity = '1';
+                      indicator.style.transform = 'translateX(0)';
+                    }
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                  e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1)';
+                  if (!isComingSoon) {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.boxShadow = isComingSoon 
+                      ? '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5)' 
+                      : '0 20px 60px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                    const indicator = e.currentTarget.querySelector('.card-indicator') as HTMLElement;
+                    if (indicator) {
+                      indicator.style.opacity = '0';
+                      indicator.style.transform = 'translateX(-8px)';
+                    }
+                  }
                 }}
               >
-                {/* Gradient Accent */}
+                {/* Animated Gradient Background Effect */}
+                <div style={{
+                  position: 'absolute',
+                  top: '-50%',
+                  left: '-50%',
+                  width: '200%',
+                  height: '200%',
+                  background: `radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)`,
+                  opacity: 0,
+                  transition: 'opacity 0.4s ease',
+                  pointerEvents: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isComingSoon) {
+                    e.currentTarget.style.opacity = '1';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '0';
+                }}
+                ></div>
+                
+                {/* Gradient Accent Bar with Glow */}
                 <div style={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: '4px',
+                  height: '5px',
                   background: card.gradient,
-                  borderRadius: '1rem 1rem 0 0'
+                  borderRadius: '1.5rem 1.5rem 0 0',
+                  opacity: isComingSoon ? 0.5 : 1,
+                  boxShadow: '0 0 20px rgba(59, 130, 246, 0.3)'
                 }}></div>
                 
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                {/* Content Container */}
+                <div style={{ 
+                  position: 'relative', 
+                  zIndex: 1,
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  gap: '1.125rem'
+                }}>
+                  {/* Icon with Enhanced Styling */}
                   <div style={{ 
-                    width: '64px',
-                    height: '64px',
+                    width: isFeatured ? '56px' : '52px',
+                    height: isFeatured ? '56px' : '52px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     background: card.gradient,
                     padding: '0.75rem',
-                    borderRadius: '0.75rem',
-                    boxShadow: '0 8px 16px -4px rgba(0, 0, 0, 0.2)',
-                    flexShrink: 0,
-                    transition: 'transform 0.3s ease'
+                    borderRadius: '1rem',
+                    boxShadow: '0 12px 24px -8px rgba(0, 0, 0, 0.3), 0 4px 12px -4px rgba(0, 0, 0, 0.2)',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    opacity: isComingSoon ? 0.5 : 1,
+                    alignSelf: 'flex-start'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'rotate(5deg) scale(1.1)';
+                    if (!isComingSoon) {
+                      e.currentTarget.style.transform = 'rotate(8deg) scale(1.15)';
+                      e.currentTarget.style.boxShadow = '0 16px 32px -8px rgba(0, 0, 0, 0.4), 0 8px 16px -4px rgba(0, 0, 0, 0.3)';
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'rotate(0) scale(1)';
+                    if (!isComingSoon) {
+                      e.currentTarget.style.transform = 'rotate(0) scale(1)';
+                      e.currentTarget.style.boxShadow = '0 12px 24px -8px rgba(0, 0, 0, 0.3), 0 4px 12px -4px rgba(0, 0, 0, 0.2)';
+                    }
                   }}
                   >
                     {card.iconComponent && <card.iconComponent />}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  
+                  {/* Text Content */}
+                  <div>
                     <h3 style={{ 
-                      fontSize: '1.125rem', 
-                      fontWeight: '700', 
-                      color: '#1e40af', 
-                      marginBottom: '0.5rem',
-                      letterSpacing: '-0.01em',
-                      lineHeight: '1.3'
+                      fontSize: isFeatured ? '1.25rem' : '1.125rem', 
+                      fontWeight: '800', 
+                      color: isComingSoon ? 'rgba(30, 64, 175, 0.6)' : '#1e293b', 
+                      marginBottom: '0.625rem',
+                      letterSpacing: '-0.02em',
+                      lineHeight: '1.3',
+                      background: isComingSoon ? 'none' : 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+                      WebkitBackgroundClip: isComingSoon ? 'none' : 'text',
+                      WebkitTextFillColor: isComingSoon ? 'rgba(30, 64, 175, 0.6)' : 'transparent',
+                      backgroundClip: isComingSoon ? 'none' : 'text'
                     }}>
                       {card.title}
                     </h3>
                     <p style={{ 
-                      fontSize: '0.9375rem', 
-                      color: '#6b7280', 
-                      marginBottom: '1rem', 
-                      lineHeight: '1.6',
-                      fontWeight: '400'
+                      fontSize: isFeatured ? '0.9375rem' : '0.875rem', 
+                      color: isComingSoon ? 'rgba(107, 114, 128, 0.6)' : '#64748b', 
+                      lineHeight: '1.65',
+                      fontWeight: '400',
+                      margin: 0
                     }}>
                       {card.description}
                     </p>
-                    <div style={{ 
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
-                      color: '#2563eb', 
-                      fontWeight: '600', 
-                      fontSize: '0.9375rem',
-                      padding: '0.5rem 0',
-                      transition: 'transform 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateX(4px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateX(0)';
-                    }}
+                  </div>
+                  
+                  {/* Subtle Arrow Indicator */}
+                  {!isComingSoon && (
+                    <div 
+                      className="card-indicator"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: '#64748b',
+                        fontSize: '0.875rem',
+                        fontWeight: '600',
+                        marginTop: 'auto',
+                        paddingTop: '0.5rem',
+                        opacity: 0,
+                        transition: 'all 0.3s ease',
+                        transform: 'translateX(-8px)'
+                      }}
                     >
-                      <span>Access</span>
-                      <svg style={{ width: '1.125rem', height: '1.125rem', marginLeft: '0.5rem', transition: 'transform 0.2s ease' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <span>Explore</span>
+                      <svg style={{ width: '1rem', height: '1rem', marginLeft: '0.5rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -1006,6 +1172,7 @@ const UserGuideContent: React.FC = () => {
           <li>Home Page</li>
           <li>ONP Event Onboarding</li>
           <li>View Event Details</li>
+          <li>Update Event</li>
           <li>MongoDB Details</li>
           <li>Kafka Details</li>
           <li>Download Functionality</li>
@@ -1044,12 +1211,13 @@ const UserGuideContent: React.FC = () => {
           <li>Upon successful authentication, you'll be redirected to the Home page</li>
         </ol>
         <h3 style={subHeadingStyle}>Navigation</h3>
-        <p style={textStyle}>The platform consists of four main sections accessible from the Home page:</p>
+        <p style={textStyle}>The platform consists of five main sections accessible from the Home page:</p>
         <ul style={listStyle}>
-          <li><strong>New ONP Event Onboarding</strong>: Create and configure new events</li>
-          <li><strong>View Event Details</strong>: Browse existing event configurations</li>
-          <li><strong>Check MongoDB Details</strong>: View MongoDB connection and data details</li>
-          <li><strong>Check Kafka Details</strong>: Monitor Kafka topics and consumer groups</li>
+          <li><strong>New Event Onboarding</strong>: Create and configure new events</li>
+          <li><strong>View MongoDB and Redis Details</strong>: View events present in MongoDB and Redis cache</li>
+          <li><strong>View Kafka Details</strong>: View event configuration present in Kafka including topics and consumer groups</li>
+          <li><strong>Update Event</strong>: Update existing event entries in MongoDB and refresh Redis cache</li>
+          <li><strong>View Complete Event Information</strong>: Browse and view all event configurations with detailed information</li>
         </ul>
       </div>
 
@@ -1070,20 +1238,21 @@ const UserGuideContent: React.FC = () => {
           the modal using the download button. Expand/collapse the section using "More" and "Less" buttons.
         </p>
         <h3 style={subHeadingStyle}>Platform Actions</h3>
-        <p style={textStyle}>Four action cards provide quick access to main features:</p>
+        <p style={textStyle}>Five action cards provide quick access to main features:</p>
         <ul style={listStyle}>
-          <li><strong>New ONP Event Onboarding</strong> (Blue): Configure and onboard new events</li>
-          <li><strong>View Event Details</strong> (Purple): Browse and search existing event configurations</li>
-          <li><strong>Check MongoDB Details</strong> (Green): View MongoDB connection details</li>
-          <li><strong>Check Kafka Details</strong> (Orange): Monitor Kafka topics</li>
+          <li><strong>New Event Onboarding</strong> (Blue): Configure and onboard new events</li>
+          <li><strong>View MongoDB and Redis Details</strong> (Green): View events present in MongoDB and Redis cache</li>
+          <li><strong>View Kafka Details</strong> (Orange): View event configuration present in Kafka including topics and consumer groups</li>
+          <li><strong>Update Event</strong> (Dark Green): Update existing event entries in MongoDB and refresh Redis cache</li>
+          <li><strong>View Complete Event Information</strong> (Purple): Browse and view all event configurations with detailed information</li>
         </ul>
       </div>
 
-      {/* ONP Event Onboarding */}
+      {/* New Event Onboarding */}
       <div style={sectionStyle}>
-        <h2 style={headingStyle}>ONP Event Onboarding</h2>
+        <h2 style={headingStyle}>New Event Onboarding</h2>
         <p style={textStyle}>
-          The ONP Event Onboarding page allows you to configure and onboard new events to the platform.
+          The New Event Onboarding page allows you to configure and onboard new events to the platform.
         </p>
         <h3 style={subHeadingStyle}>Step 1: Select Environment</h3>
         <p style={textStyle}>Choose an environment from the dropdown:</p>
@@ -1141,11 +1310,67 @@ const UserGuideContent: React.FC = () => {
         </p>
       </div>
 
-      {/* MongoDB Details */}
+      {/* Update Event */}
       <div style={sectionStyle}>
-        <h2 style={headingStyle}>MongoDB Details</h2>
+        <h2 style={headingStyle}>Update Event</h2>
         <p style={textStyle}>
-          The MongoDB Details page allows you to query and view MongoDB and Redis data for specific events.
+          The Update Event page allows you to update existing event entries in MongoDB and refresh Redis cache.
+        </p>
+        <h3 style={subHeadingStyle}>Environment Selection and Token Generation</h3>
+        <p style={textStyle}>
+          The page features a separate box at the top for environment selection and token generation.
+        </p>
+        <ul style={listStyle}>
+          <li><strong>Environment Selection</strong>: Select the environment from the dropdown (same options as Event Onboarding). This is a required field.</li>
+          <li><strong>Authorization Token</strong>: Use "Generate Token" button to create a token using SAT service, or enter a custom Bearer token manually. This field is optional but recommended for secure access.</li>
+        </ul>
+        <h3 style={subHeadingStyle}>Step 1: Enter Event Details</h3>
+        <ul style={listStyle}>
+          <li><strong>Event Name*</strong>: Enter the name of an existing event that you want to update. The event must already exist in the selected environment. This is a required field.</li>
+          <li><strong>Subscriber Name</strong>: Optional - Enter subscriber name if you want to update subscriber-specific configurations.</li>
+        </ul>
+        <h3 style={subHeadingStyle}>Step 2: Configure Downstream Details</h3>
+        <p style={textStyle}>Add or modify downstream configurations:</p>
+        <ul style={listStyle}>
+          <li><strong>Name</strong>: Downstream system name</li>
+          <li><strong>Endpoint</strong>: API endpoint URL</li>
+          <li><strong>Client ID</strong>: OAuth client ID</li>
+          <li><strong>Client Secret</strong>: OAuth client secret</li>
+          <li><strong>Scope</strong>: OAuth scope</li>
+          <li><strong>Subscriber Name</strong>: Subscriber for this downstream</li>
+        </ul>
+        <h3 style={subHeadingStyle}>Step 3: Update Schemas (Optional)</h3>
+        <ul style={listStyle}>
+          <li><strong>Header Schema</strong>: Update the JSON schema for event headers using the JSON editor with syntax highlighting</li>
+          <li><strong>Payload Schema</strong>: Update the JSON schema for event payloads</li>
+        </ul>
+        <h3 style={subHeadingStyle}>Step 4: Submit Update</h3>
+        <ol style={{ ...listStyle, listStyleType: 'decimal' }}>
+          <li>Review all fields and validation status</li>
+          <li>Click "Update Event" button</li>
+          <li>The button will be disabled after submission</li>
+          <li>To resubmit, edit any field to re-enable the button</li>
+        </ol>
+        <h3 style={subHeadingStyle}>Step 5: View Results</h3>
+        <p style={textStyle}>After submission, the Task Results panel displays:</p>
+        <ul style={listStyle}>
+          <li><strong>Success</strong> (Green): Update completed successfully</li>
+          <li><strong>Failure</strong> (Red): Update failed with error message</li>
+          <li><strong>Partial</strong> (Yellow): Update completed with warnings</li>
+        </ul>
+        <h3 style={subHeadingStyle}>Accessing from MongoDB Details</h3>
+        <p style={textStyle}>
+          You can also navigate to the Update Event page from the MongoDB Details page. After viewing MongoDB/Redis details, 
+          a subtle link appears in the Results Summary (for successful responses) or in the Error/Warning section (for error responses): 
+          "Go to Update Event page". Click the link to navigate directly. The link is available for both success and error responses.
+        </p>
+      </div>
+
+      {/* View MongoDB and Redis Details */}
+      <div style={sectionStyle}>
+        <h2 style={headingStyle}>View MongoDB and Redis Details</h2>
+        <p style={textStyle}>
+          The View MongoDB and Redis Details page allows you to view events present in MongoDB and Redis cache with complete event information.
         </p>
         <ol style={{ ...listStyle, listStyleType: 'decimal' }}>
           <li>Select environment from the dropdown</li>
@@ -1159,11 +1384,11 @@ const UserGuideContent: React.FC = () => {
         </p>
       </div>
 
-      {/* Kafka Details */}
+      {/* View Kafka Details */}
       <div style={sectionStyle}>
-        <h2 style={headingStyle}>Kafka Details</h2>
+        <h2 style={headingStyle}>View Kafka Details</h2>
         <p style={textStyle}>
-          The Kafka Details page allows you to monitor Kafka topics and view topic configurations.
+          The View Kafka Details page allows you to view event configuration present in Kafka including topics, consumer groups, and related settings.
         </p>
         <ol style={{ ...listStyle, listStyleType: 'decimal' }}>
           <li>Select environment from the dropdown</li>

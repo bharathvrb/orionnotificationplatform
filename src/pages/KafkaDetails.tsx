@@ -5,31 +5,42 @@ import { generateSatToken } from '../services/sat';
 import { downloadAsExcel, type DownloadData } from '../services/download';
 import type { KafkaDetailsResponse, KafkaDetailsListResponse, Environment } from '../types';
 
-const ENVIRONMENT_OPTIONS: Environment[] = [
-  'DEV AS-G8',
-  'DEV HO-G2',
-  'QA AS-G8',
-  'QA HO-G2',
-  'INT AS-G8',
-  'INT HO-G2',
-  'FLX AS-G8',
-  'FLA HO-G2',
-  'TRN AS-G8',
-  'TRN HO-G2',
+// Simplified display names for dropdown
+const ENVIRONMENT_DISPLAY_OPTIONS = [
+  'DEV',
+  'QA',
+  'INT',
+  'FLX',
+  'TRN',
   'STG CH2-G2',
   'STG HO-G4',
-  'PROD G1',
-  'PROD AS-G6',
-  'PROD HO-G1',
-  'PROD HO-G3',
-  'BUS AS-G8',
-  'BUS HO-G2',
+  'PROD',
+  'BUS',
 ];
+
+// Mapping from simplified display name to full backend environment name
+const ENVIRONMENT_MAPPING: Record<string, Environment> = {
+  'DEV': 'DEV AS-G8',
+  'QA': 'QA AS-G8',
+  'INT': 'INT AS-G8',
+  'FLX': 'FLX AS-G8',
+  'TRN': 'TRN AS-G8',
+  'STG CH2-G2': 'STG CH2-G2',
+  'STG HO-G4': 'STG HO-G4',
+  'PROD': 'PROD G1',
+  'BUS': 'BUS AS-G8',
+};
+
+// Helper function to convert display name to backend environment
+const getBackendEnvironment = (displayName: string): Environment | undefined => {
+  return ENVIRONMENT_MAPPING[displayName];
+};
 
 export const KafkaDetails: React.FC = () => {
   const navigate = useNavigate();
-  const [environment, setEnvironment] = useState<Environment | ''>('');
+  const [environment, setEnvironment] = useState<string>(''); // Store simplified display name
   const [topicNamesInput, setTopicNamesInput] = useState('');
+  const [useAll, setUseAll] = useState(false);
   const [authorization, setAuthorization] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [kafkaDetails, setKafkaDetails] = useState<KafkaDetailsListResponse | null>(null);
@@ -116,7 +127,7 @@ export const KafkaDetails: React.FC = () => {
         method: 'POST',
         body: lastRequestData || {},
         queryParams: {
-          environment: environment || '',
+          environment: environment ? getBackendEnvironment(environment) || '' : '',
         },
       },
       response: {
@@ -127,7 +138,7 @@ export const KafkaDetails: React.FC = () => {
       },
       metadata: {
         topicCount: kafkaDetails?.topicDetails?.length || 0,
-        environment: environment || 'Not specified',
+        environment: environment ? (getBackendEnvironment(environment) || environment) : 'Not specified',
         status: error || kafkaDetails?.status === 'Failure' ? 'Failed' : (kafkaDetails?.status || 'Success'),
         hasError: !!error || kafkaDetails?.status === 'Failure',
         healthyTopics: kafkaDetails?.topicDetails?.filter(t => t.health?.toLowerCase() === 'healthy').length || 0,
@@ -141,8 +152,9 @@ export const KafkaDetails: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!topicNamesInput.trim()) {
-      setError('Please enter at least one topic name');
+    
+    if (!useAll && !topicNamesInput.trim()) {
+      setError('Please enter at least one topic name or select "Fetch All Topics"');
       return;
     }
 
@@ -156,18 +168,23 @@ export const KafkaDetails: React.FC = () => {
     setFormHasChanged(false);
 
     try {
-      const topicNames = topicNamesInput
-        .split(',')
-        .map(name => name.trim())
-        .filter(name => name.length > 0);
+      const topicNames = useAll 
+        ? ['ALL'] 
+        : topicNamesInput
+            .split(',')
+            .map(name => name.trim())
+            .filter(name => name.length > 0);
 
       const requestData = { topicNames };
       setLastRequestData(requestData);
 
+      // Convert display environment to backend environment
+      const backendEnvironment = environment ? getBackendEnvironment(environment) : undefined;
+      
       const response = await fetchKafkaDetails(
         requestData,
         undefined,
-        environment || undefined,
+        backendEnvironment,
         authorization || undefined
       );
       setKafkaDetails(response);
@@ -288,7 +305,14 @@ export const KafkaDetails: React.FC = () => {
     setTokenError(null);
 
     try {
-      const token = await generateSatToken(environment as Environment, {
+      // Convert display environment to backend environment for token generation
+      const backendEnvironment = getBackendEnvironment(environment);
+      if (!backendEnvironment) {
+        setTokenError('Invalid environment selected');
+        return;
+      }
+      
+      const token = await generateSatToken(backendEnvironment, {
         clientId: tokenCredentials.clientId,
         clientSecret: tokenCredentials.clientSecret,
         scope: tokenCredentials.scope,
@@ -350,98 +374,126 @@ export const KafkaDetails: React.FC = () => {
             Back to Home
           </button>
           <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 rounded-xl shadow-2xl p-6 border-2 border-primary-600">
-            <h1 className="text-2xl font-bold text-white mb-2 drop-shadow-lg">Kafka Details</h1>
+            <h1 className="text-2xl font-bold text-white mb-2 drop-shadow-lg">View Kafka Details</h1>
             <p className="text-white text-lg font-medium">
-              Monitor Kafka topics and consumer groups with detailed insights
+              View event configuration present in Kafka including topics, consumer groups, and related settings
             </p>
+          </div>
+        </div>
+
+        {/* Environment Selection and Token Generation Box */}
+        <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
+          <div className="space-y-4">
+            {/* Environment Selection */}
+            <div>
+              <label htmlFor="environment" className="block text-sm font-medium text-gray-700 mb-2">
+                Environment *
+              </label>
+              <select
+                id="environment"
+                value={environment}
+                onChange={(e) => {
+                  setEnvironment(e.target.value);
+                  if (hasSubmitted) setFormHasChanged(true);
+                }}
+                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                disabled={loading}
+                required
+              >
+                <option value="">-- Select Environment --</option>
+                {ENVIRONMENT_DISPLAY_OPTIONS.map((env) => (
+                  <option key={env} value={env}>
+                    {env}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Authorization Token */}
+            <div>
+              <label htmlFor="authorization" className="block text-sm font-medium text-gray-700 mb-2">
+                Authorization Token
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="authorization"
+                  type="password"
+                  value={authorization}
+                  onChange={(e) => {
+                    setAuthorization(e.target.value);
+                    if (hasSubmitted) setFormHasChanged(true);
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Enter authorization token or generate one"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowTokenModal(true)}
+                  disabled={!environment || loading}
+                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                    environment && !loading
+                      ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                  title={!environment ? 'Please select an environment first' : 'Generate token'}
+                >
+                  Generate Token
+                </button>
+              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                Optional: Generate a token using SAT service or enter a custom token
+              </p>
+            </div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8">
           <form onSubmit={handleSubmit} className="mb-8">
             <div className="space-y-4">
-              <div>
-                <label htmlFor="environment" className="block text-sm font-medium text-gray-700 mb-2">
-                  Environment *
-                </label>
-                <select
-                  id="environment"
-                  value={environment}
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="useAll"
+                  checked={useAll}
                   onChange={(e) => {
-                    setEnvironment(e.target.value as Environment);
+                    setUseAll(e.target.checked);
+                    if (e.target.checked) {
+                      setTopicNamesInput('');
+                    }
                     if (hasSubmitted) setFormHasChanged(true);
                   }}
-                  className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  disabled={loading}
-                  required
-                >
-                  <option value="">-- Select Environment --</option>
-                  {ENVIRONMENT_OPTIONS.map((env) => (
-                    <option key={env} value={env}>
-                      {env}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Authorization Token */}
-              <div>
-                <label htmlFor="authorization" className="block text-sm font-medium text-gray-700 mb-2">
-                  Authorization Token
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    id="authorization"
-                    type="password"
-                    value={authorization}
-                    onChange={(e) => {
-                      setAuthorization(e.target.value);
-                      if (hasSubmitted) setFormHasChanged(true);
-                    }}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Enter authorization token or generate one"
-                    disabled={loading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowTokenModal(true)}
-                    disabled={!environment || loading}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                      environment && !loading
-                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                    title={!environment ? 'Please select an environment first' : 'Generate token'}
-                  >
-                    Generate Token
-                  </button>
-                </div>
-                <p className="mt-1 text-sm text-gray-500">
-                  Optional: Generate a token using SAT service or enter a custom token
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor="topicNames" className="block text-sm font-medium text-gray-700 mb-2">
-                  Kafka Topic Names (comma-separated) *
-                </label>
-                <textarea
-                  id="topicNames"
-                  value={topicNamesInput}
-                  onChange={(e) => {
-                    setTopicNamesInput(e.target.value);
-                    if (hasSubmitted) setFormHasChanged(true);
-                  }}
-                  placeholder="e.g., onp-cbgupdate-topic, onp-order-topic, onp-payment-topic"
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                   disabled={loading}
                 />
+                <label htmlFor="useAll" className="ml-3 text-sm font-semibold text-gray-700">
+                  Fetch All Topics
+                </label>
               </div>
+
+              {!useAll && (
+                <div>
+                  <label htmlFor="topicNames" className="block text-sm font-medium text-gray-700 mb-2">
+                    Kafka Topic Names (comma-separated)
+                  </label>
+                  <textarea
+                    id="topicNames"
+                    value={topicNamesInput}
+                    onChange={(e) => {
+                      setTopicNamesInput(e.target.value);
+                      if (hasSubmitted) setFormHasChanged(true);
+                    }}
+                    placeholder="e.g., onp-cbgupdate-topic, onp-order-topic, onp-payment-topic"
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    disabled={loading || useAll}
+                  />
+                </div>
+              )}
 
               <button
                 type="submit"
-                disabled={loading || !environment || !topicNamesInput.trim() || (hasSubmitted && !formHasChanged)}
+                disabled={loading || !environment || (!useAll && !topicNamesInput.trim()) || (hasSubmitted && !formHasChanged)}
                 className="w-full px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-semibold hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {loading ? (
@@ -453,7 +505,7 @@ export const KafkaDetails: React.FC = () => {
                     Fetching...
                   </>
                 ) : (
-                  'Fetch Details'
+                  useAll ? 'Fetch All Topics' : 'Fetch Details'
                 )}
               </button>
             </div>
@@ -648,9 +700,9 @@ export const KafkaDetails: React.FC = () => {
           {!kafkaDetails && !loading && !error && (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">⚡</div>
-              <h2 className="text-2xl font-bold text-primary-700 mb-4">Kafka Topic Details</h2>
+              <h2 className="text-2xl font-bold text-primary-700 mb-4">View Kafka Details</h2>
               <p className="text-gray-600 mb-6">
-                Enter Kafka topic names above (comma-separated) to view their details, health status, configuration, and consumer groups.
+                Enter Kafka topic names above (comma-separated) to view event configuration present in Kafka including topics, consumer groups, and related settings.
               </p>
             </div>
           )}

@@ -258,12 +258,14 @@ export const onboardOnp = async (
       } else if (status === 401) {
         throw new Error('Authentication failed. Please check your authorization token or generate a new one.');
       } else if (status === 403) {
-        throw new Error('Access forbidden. You may not have permission to onboard events in this environment.');
+        throw new Error('Access forbidden. You may not have permission to update events in this environment.');
       } else if (status === 404) {
-        throw new Error('The onboard endpoint was not found. Please contact support.');
+        throw new Error('Event not found. The specified event does not exist in the selected environment. Please verify the event name and try again.');
       } else if (status === 500) {
         const serverError = responseData?.message || responseData?.error || 'Internal server error';
         throw new Error(`Server error: ${serverError}. Please try again later or contact support.`);
+      } else if (status === 503) {
+        throw new Error('Service not reachable. The update service is currently unavailable. Please try again later.');
       } else if (responseData) {
         if (typeof responseData === 'string') {
           throw new Error(responseData);
@@ -467,6 +469,163 @@ export const fetchMongoDBDetails = async (
         throw new Error('Access forbidden. You may not have permission to access MongoDB details for this environment.');
       } else if (status === 404) {
         throw new Error('The MongoDB details endpoint was not found. Please contact support.');
+      } else if (status === 500) {
+        const serverError = responseData?.message || responseData?.error || 'Internal server error';
+        throw new Error(`Server error: ${serverError}. Please try again later or contact support.`);
+      } else if (responseData) {
+        if (typeof responseData === 'string') {
+          throw new Error(responseData);
+        } else if (responseData.message) {
+          throw new Error(responseData.message);
+        } else if (responseData.error) {
+          throw new Error(responseData.error);
+        }
+      }
+      
+      throw new Error(
+        axiosError.message || 
+        `Request failed with status code ${status || 'unknown'}. Please try again.`
+      );
+    }
+    throw error;
+  }
+};
+
+export const updateOnp = async (
+  request: OnboardRequest
+): Promise<OnboardResponse> => {
+  try {
+    // Extract headers from request
+    const headers: Record<string, string> = {};
+    
+    // Generate trackingId if not provided (required by backend)
+    headers['trackingId'] = `update-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Add environment header if provided
+    if (request.environment) {
+      headers['environment'] = request.environment;
+    }
+    
+    // Add requestCriteria header if provided
+    if (request.requestCriteria && request.requestCriteria.length > 0) {
+      headers['requestCriteria'] = request.requestCriteria.join(',');
+    }
+    
+    // Handle authorization token
+    if (request.authorization) {
+      const token = request.authorization.trim();
+      headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    }
+
+    // Build request body - backend expects ONPEventRequest structure
+    const body: any = {};
+    
+    if (request.eventName) {
+      body.eventName = request.eventName;
+    }
+    
+    // Process headerSchema and payloadSchema similar to onboard
+    if (request.headerSchema) {
+      try {
+        let parsed: any;
+        if (typeof request.headerSchema === 'string') {
+          const firstParse = JSON.parse(request.headerSchema);
+          parsed = typeof firstParse === 'string' ? JSON.parse(firstParse) : firstParse;
+        } else {
+          parsed = request.headerSchema;
+        }
+        body.headerSchema = JSON.stringify(JSON.stringify(parsed));
+      } catch (error) {
+        throw new Error('Invalid headerSchema JSON: ' + (error instanceof Error ? error.message : String(error)));
+      }
+    }
+    
+    if (request.payloadSchema) {
+      try {
+        let parsed: any;
+        if (typeof request.payloadSchema === 'string') {
+          const firstParse = JSON.parse(request.payloadSchema);
+          parsed = typeof firstParse === 'string' ? JSON.parse(firstParse) : firstParse;
+        } else {
+          parsed = request.payloadSchema;
+        }
+        body.payloadSchema = JSON.stringify(JSON.stringify(parsed));
+      } catch (error) {
+        throw new Error('Invalid payloadSchema JSON: ' + (error instanceof Error ? error.message : String(error)));
+      }
+    }
+    
+    if (request.downstreamDetails && request.downstreamDetails.length > 0) {
+      body.downstreamDetails = request.downstreamDetails.map(detail => ({
+        name: detail.name,
+        endpoint: detail.endpoint,
+        clientId: detail.clientId,
+        clientSecret: detail.clientSecret,
+        scope: detail.scope,
+        httpStatusCode: detail.httpStatusCode?.toString(),
+        maintenanceFlag: detail.maintenanceFlag ? 1 : 0,
+        maxRetryCount: detail.maxRetryCount || 0,
+        retryDelay: detail.retryDelay || 0,
+      }));
+    }
+    
+    if (request.subscriberName) {
+      body.subscriberName = request.subscriberName;
+    }
+
+    const requestConfig: any = { headers };
+    
+    if (headers.Authorization) {
+      console.log('Sending update request with Authorization header');
+    } else {
+      console.warn('No Authorization header in update request - token may be missing');
+    }
+
+    const response = await apiClient.put<ONPEventResponse>(
+      `${API_BASE_URL}/updateonp`,
+      body,
+      requestConfig
+    );
+
+    // Transform backend response to frontend expected format
+    return transformResponse(response.data);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<any>;
+      const status = axiosError.response?.status;
+      const responseData = axiosError.response?.data;
+
+      // Check if backend returned a structured ONPEventResponse (even on error)
+      if (responseData && typeof responseData === 'object' && 
+          ('mongoDBAndRedis' in responseData || 'kafka' in responseData || 
+           'deploymentManifestFile' in responseData || 'orionPropertiesFile' in responseData ||
+           'fallbackDB' in responseData || 'concourseVault' in responseData)) {
+        return transformResponse(responseData as ONPEventResponse);
+      }
+
+      // Handle different error scenarios with user-friendly messages
+      if (status === 400) {
+        let errorMessage = 'Invalid request. ';
+        if (responseData) {
+          if (typeof responseData === 'string') {
+            errorMessage += responseData;
+          } else if (responseData.message) {
+            errorMessage += responseData.message;
+          } else if (responseData.error) {
+            errorMessage += responseData.error;
+          } else {
+            errorMessage += 'Please check your request data and try again.';
+          }
+        } else {
+          errorMessage += 'Please check your request data and try again.';
+        }
+        throw new Error(errorMessage);
+      } else if (status === 401) {
+        throw new Error('Authentication failed. Please check your authorization token or generate a new one.');
+      } else if (status === 403) {
+        throw new Error('Access forbidden. You may not have permission to update events in this environment.');
+      } else if (status === 404) {
+        throw new Error('Event not found. The event you are trying to update does not exist in the specified environment.');
       } else if (status === 500) {
         const serverError = responseData?.message || responseData?.error || 'Internal server error';
         throw new Error(`Server error: ${serverError}. Please try again later or contact support.`);
