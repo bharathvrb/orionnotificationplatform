@@ -224,21 +224,60 @@ export const onboardOnp = async (
     return transformResponse(response.data);
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError<{ message?: string } | ONPEventResponse>;
-      if (axiosError.response?.data) {
-        // Try to transform if it's an ONPEventResponse
-        if ('mongoDBAndRedis' in axiosError.response.data || 'kafka' in axiosError.response.data) {
-          return transformResponse(axiosError.response.data as ONPEventResponse);
-        }
-        // Otherwise throw error
-        const errorData = axiosError.response.data as { message?: string };
-        throw new Error(
-          errorData.message || 
-          axiosError.message || 
-          'Failed to onboard ONP'
-        );
+      const axiosError = error as AxiosError<any>;
+      const status = axiosError.response?.status;
+      const responseData = axiosError.response?.data;
+
+      // Check if backend returned a structured ONPEventResponse (even on error)
+      if (responseData && typeof responseData === 'object' && 
+          ('mongoDBAndRedis' in responseData || 'kafka' in responseData || 
+           'deploymentManifestFile' in responseData || 'orionPropertiesFile' in responseData ||
+           'fallbackDB' in responseData || 'concourseVault' in responseData)) {
+        // Transform and return the response even if status code indicates error
+        // This allows partial success scenarios to be handled properly
+        return transformResponse(responseData as ONPEventResponse);
       }
-      throw new Error(axiosError.message || 'Network error');
+
+      // Handle different error scenarios with user-friendly messages
+      if (status === 400) {
+        let errorMessage = 'Invalid request. ';
+        if (responseData) {
+          if (typeof responseData === 'string') {
+            errorMessage += responseData;
+          } else if (responseData.message) {
+            errorMessage += responseData.message;
+          } else if (responseData.error) {
+            errorMessage += responseData.error;
+          } else {
+            errorMessage += 'Please check your request data and try again.';
+          }
+        } else {
+          errorMessage += 'Please check your request data and try again.';
+        }
+        throw new Error(errorMessage);
+      } else if (status === 401) {
+        throw new Error('Authentication failed. Please check your authorization token or generate a new one.');
+      } else if (status === 403) {
+        throw new Error('Access forbidden. You may not have permission to onboard events in this environment.');
+      } else if (status === 404) {
+        throw new Error('The onboard endpoint was not found. Please contact support.');
+      } else if (status === 500) {
+        const serverError = responseData?.message || responseData?.error || 'Internal server error';
+        throw new Error(`Server error: ${serverError}. Please try again later or contact support.`);
+      } else if (responseData) {
+        if (typeof responseData === 'string') {
+          throw new Error(responseData);
+        } else if (responseData.message) {
+          throw new Error(responseData.message);
+        } else if (responseData.error) {
+          throw new Error(responseData.error);
+        }
+      }
+      
+      throw new Error(
+        axiosError.message || 
+        `Request failed with status code ${status || 'unknown'}. Please try again.`
+      );
     }
     throw error;
   }
@@ -287,19 +326,65 @@ export const fetchKafkaDetails = async (
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError<{ message?: string }>;
-      if (axiosError.response?.data) {
-        // If server returns structured error, return it
-        if (axiosError.response.data.message) {
-          throw new Error(axiosError.response.data.message);
+      const axiosError = error as AxiosError<any>;
+      const status = axiosError.response?.status;
+      const responseData = axiosError.response?.data;
+
+      // Handle different error scenarios with user-friendly messages
+      if (status === 400) {
+        // Check if backend returned a structured KafkaDetailsListResponse
+        // Some backends return 400 with structured data that we should still process
+        if (responseData && typeof responseData === 'object' && 
+            ('topicDetails' in responseData || 'status' in responseData || 'message' in responseData)) {
+          // This looks like a KafkaDetailsListResponse - return it so component can handle it
+          // The component will check status and topicDetails to show appropriate messages
+          return responseData as KafkaDetailsListResponse;
         }
-        throw new Error(
-          axiosError.response.data.message || 
-          axiosError.message || 
-          'Failed to fetch Kafka details'
-        );
+        
+        // Bad request - likely invalid topic names or missing topics
+        let errorMessage = 'Invalid request. ';
+        
+        if (responseData) {
+          // Try to extract meaningful error message from response
+          if (typeof responseData === 'string') {
+            errorMessage += responseData;
+          } else if (responseData.message) {
+            errorMessage += responseData.message;
+          } else if (responseData.error) {
+            errorMessage += responseData.error;
+          } else {
+            errorMessage += 'One or more Kafka topics may not exist in the specified environment. Please verify the topic names and try again.';
+          }
+        } else {
+          errorMessage += 'One or more Kafka topics may not exist in the specified environment. Please verify the topic names and try again.';
+        }
+        
+        throw new Error(errorMessage);
+      } else if (status === 401) {
+        throw new Error('Authentication failed. Please check your authorization token or generate a new one.');
+      } else if (status === 403) {
+        throw new Error('Access forbidden. You may not have permission to access Kafka details for this environment.');
+      } else if (status === 404) {
+        throw new Error('The Kafka details endpoint was not found. Please contact support.');
+      } else if (status === 500) {
+        const serverError = responseData?.message || responseData?.error || 'Internal server error';
+        throw new Error(`Server error: ${serverError}. Please try again later or contact support.`);
+      } else if (responseData) {
+        // Try to extract error message from response
+        if (typeof responseData === 'string') {
+          throw new Error(responseData);
+        } else if (responseData.message) {
+          throw new Error(responseData.message);
+        } else if (responseData.error) {
+          throw new Error(responseData.error);
+        }
       }
-      throw new Error(axiosError.message || 'Network error');
+      
+      // Fallback to status-specific message
+      throw new Error(
+        axiosError.message || 
+        `Request failed with status code ${status || 'unknown'}. Please try again.`
+      );
     }
     throw error;
   }
@@ -348,19 +433,57 @@ export const fetchMongoDBDetails = async (
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError<{ message?: string }>;
-      if (axiosError.response?.data) {
-        // If server returns structured error, return it
-        if (axiosError.response.data.message) {
-          throw new Error(axiosError.response.data.message);
-        }
-        throw new Error(
-          axiosError.response.data.message || 
-          axiosError.message || 
-          'Failed to fetch MongoDB details'
-        );
+      const axiosError = error as AxiosError<any>;
+      const status = axiosError.response?.status;
+      const responseData = axiosError.response?.data;
+
+      // Check if backend returned a structured MongoDBDetailsResponse
+      if (status === 400 && responseData && typeof responseData === 'object' && 
+          ('eventDetails' in responseData || 'status' in responseData || 'message' in responseData)) {
+        // This looks like a MongoDBDetailsResponse - return it so component can handle it
+        return responseData as MongoDBDetailsResponse;
       }
-      throw new Error(axiosError.message || 'Network error');
+
+      // Handle different error scenarios with user-friendly messages
+      if (status === 400) {
+        let errorMessage = 'Invalid request. ';
+        if (responseData) {
+          if (typeof responseData === 'string') {
+            errorMessage += responseData;
+          } else if (responseData.message) {
+            errorMessage += responseData.message;
+          } else if (responseData.error) {
+            errorMessage += responseData.error;
+          } else {
+            errorMessage += 'One or more event names may not exist in the specified environment. Please verify the event names and try again.';
+          }
+        } else {
+          errorMessage += 'One or more event names may not exist in the specified environment. Please verify the event names and try again.';
+        }
+        throw new Error(errorMessage);
+      } else if (status === 401) {
+        throw new Error('Authentication failed. Please check your authorization token or generate a new one.');
+      } else if (status === 403) {
+        throw new Error('Access forbidden. You may not have permission to access MongoDB details for this environment.');
+      } else if (status === 404) {
+        throw new Error('The MongoDB details endpoint was not found. Please contact support.');
+      } else if (status === 500) {
+        const serverError = responseData?.message || responseData?.error || 'Internal server error';
+        throw new Error(`Server error: ${serverError}. Please try again later or contact support.`);
+      } else if (responseData) {
+        if (typeof responseData === 'string') {
+          throw new Error(responseData);
+        } else if (responseData.message) {
+          throw new Error(responseData.message);
+        } else if (responseData.error) {
+          throw new Error(responseData.error);
+        }
+      }
+      
+      throw new Error(
+        axiosError.message || 
+        `Request failed with status code ${status || 'unknown'}. Please try again.`
+      );
     }
     throw error;
   }

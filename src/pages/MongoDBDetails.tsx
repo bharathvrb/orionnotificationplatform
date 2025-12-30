@@ -46,6 +46,7 @@ export const MongoDBDetails: React.FC = () => {
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [lastRequestData, setLastRequestData] = useState<any>(null);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [errorStatusCode, setErrorStatusCode] = useState<number | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [formHasChanged, setFormHasChanged] = useState(false);
 
@@ -54,6 +55,57 @@ export const MongoDBDetails: React.FC = () => {
     const hasData = mongoDBDetails || lastRequestData || error;
     if (!hasData) {
       return;
+    }
+
+    // Determine response status
+    let responseStatus = 200;
+    let statusText = 'OK';
+    if (errorStatusCode) {
+      // Use the actual status code from the error
+      responseStatus = errorStatusCode;
+      switch (errorStatusCode) {
+        case 400:
+          statusText = 'Bad Request';
+          break;
+        case 401:
+          statusText = 'Unauthorized';
+          break;
+        case 403:
+          statusText = 'Forbidden';
+          break;
+        case 404:
+          statusText = 'Not Found';
+          break;
+        case 500:
+          statusText = 'Internal Server Error';
+          break;
+        default:
+          statusText = 'Error';
+      }
+    } else if (error) {
+      // Try to infer status from error message if status code not available
+      if (error.includes('[HTTP 400]') || error.includes('Invalid request') || error.includes('not exist')) {
+        responseStatus = 400;
+        statusText = 'Bad Request';
+      } else if (error.includes('[HTTP 401]') || error.includes('Authentication')) {
+        responseStatus = 401;
+        statusText = 'Unauthorized';
+      } else if (error.includes('[HTTP 403]') || error.includes('forbidden')) {
+        responseStatus = 403;
+        statusText = 'Forbidden';
+      } else if (error.includes('[HTTP 404]')) {
+        responseStatus = 404;
+        statusText = 'Not Found';
+      } else if (error.includes('[HTTP 500]') || error.includes('Server error')) {
+        responseStatus = 500;
+        statusText = 'Internal Server Error';
+      } else {
+        responseStatus = 500;
+        statusText = 'Error';
+      }
+    } else if (mongoDBDetails?.status === 'Failure') {
+      responseStatus = 400;
+      statusText = 'Bad Request';
     }
 
     const downloadData: DownloadData = {
@@ -70,13 +122,17 @@ export const MongoDBDetails: React.FC = () => {
       response: {
         data: mongoDBDetails,
         error: error || lastError || (mongoDBDetails?.status === 'Failure' ? mongoDBDetails.message : undefined),
-        status: mongoDBDetails?.status === 'Failure' ? 400 : (error ? 500 : 200),
+        status: responseStatus,
+        statusText: statusText,
       },
       metadata: {
         eventCount: mongoDBDetails?.eventDetails?.length || 0,
         environment: environment || 'Not specified',
-        status: error || mongoDBDetails?.status === 'Failure' ? 'Failed' : 'Success',
+        status: error || mongoDBDetails?.status === 'Failure' ? 'Failed' : (mongoDBDetails?.status || 'Success'),
         hasError: !!error || mongoDBDetails?.status === 'Failure',
+        eventsWithMongoDB: mongoDBDetails?.eventDetails?.filter(e => e.mongoDBData).length || 0,
+        eventsWithRedis: mongoDBDetails?.eventDetails?.filter(e => e.redisData).length || 0,
+        totalDownstreams: mongoDBDetails?.eventDetails?.reduce((sum, e) => sum + (e.downstreamDetails?.length || 0), 0) || 0,
       },
     };
 
@@ -93,6 +149,7 @@ export const MongoDBDetails: React.FC = () => {
 
     setLoading(true);
     setError(null);
+    setErrorStatusCode(null);
     setMongoDBDetails(null);
     setExpandedEvents(new Set());
     setHasSubmitted(false);
@@ -119,16 +176,56 @@ export const MongoDBDetails: React.FC = () => {
       setLastError(null);
       setHasSubmitted(true);
       setFormHasChanged(false);
+      
+      // Check if response indicates failure
       if (response.status === 'Failure') {
         const errorMsg = response.message || 'Failed to fetch MongoDB details';
         setError(errorMsg);
         setLastError(errorMsg);
+      } else if (response.eventDetails && response.eventDetails.length === 0) {
+        const errorMsg = `No events found. The requested event name(s) may not exist in the ${environment} environment.`;
+        setError(errorMsg);
+        setLastError(errorMsg);
       }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch MongoDB details';
-      setError(errorMsg);
-      setLastError(errorMsg);
-      setMongoDBDetails(null);
+    } catch (err: any) {
+      // Extract status code
+      const statusCode = err?.response?.status || err?.status || null;
+      setErrorStatusCode(statusCode);
+      
+      // Check if error contains response data that we can use
+      if (err?.response?.data && typeof err.response.data === 'object' && 'eventDetails' in err.response.data) {
+        // Backend returned structured error with event details
+        const errorResponse = err.response.data as MongoDBDetailsResponse;
+        setMongoDBDetails(errorResponse);
+        
+        // Extract error message
+        let errorMsg = errorResponse.message || err.message || 'Failed to fetch MongoDB details';
+        
+        // If we have event details, provide more context
+        if (errorResponse.eventDetails && errorResponse.eventDetails.length === 0) {
+          errorMsg = `No events found. The requested event name(s) may not exist in the ${environment} environment.`;
+        }
+        
+        // Add status code to error message
+        if (statusCode) {
+          errorMsg = `[HTTP ${statusCode}] ${errorMsg}`;
+        }
+        
+        setError(errorMsg);
+        setLastError(errorMsg);
+      } else {
+        // Standard error handling
+        let errorMsg = err instanceof Error ? err.message : 'Failed to fetch MongoDB details';
+        
+        // Add status code to error message
+        if (statusCode) {
+          errorMsg = `[HTTP ${statusCode}] ${errorMsg}`;
+        }
+        
+        setError(errorMsg);
+        setLastError(errorMsg);
+        setMongoDBDetails(null);
+      }
       setHasSubmitted(true);
       setFormHasChanged(false);
     } finally {
@@ -322,11 +419,57 @@ export const MongoDBDetails: React.FC = () => {
           </form>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <p className="text-red-800">{error}</p>
+            <div className={`mb-6 p-5 rounded-lg border-l-4 ${
+              error.toLowerCase().includes('warning') 
+                ? 'bg-yellow-50 border-yellow-400' 
+                : 'bg-red-50 border-red-400'
+            }`}>
+              <div className="flex items-start justify-between">
+                <div className="flex items-start flex-1">
+                  {error.toLowerCase().includes('warning') ? (
+                    <svg className="w-5 h-5 text-yellow-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 text-red-400 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  <div className="flex-1">
+                    <p className={`font-semibold mb-1 ${
+                      error.toLowerCase().includes('warning') 
+                        ? 'text-yellow-800' 
+                        : 'text-red-800'
+                    }`}>
+                      {error.toLowerCase().includes('warning') ? 'Warning' : 'Error'}
+                    </p>
+                    <p className={`text-sm ${
+                      error.toLowerCase().includes('warning') 
+                        ? 'text-yellow-700' 
+                        : 'text-red-700'
+                    }`}>
+                      {error}
+                    </p>
+                    <div className={`flex items-center gap-3 mt-2 text-xs ${
+                      error.toLowerCase().includes('warning') 
+                        ? 'text-yellow-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {environment && (
+                        <span>
+                          Environment: <span className="font-semibold">{environment}</span>
+                        </span>
+                      )}
+                      {errorStatusCode && (
+                        <span className="px-2 py-1 bg-white bg-opacity-50 rounded border border-current font-mono font-semibold">
+                          Status: {errorStatusCode}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 {(error || lastRequestData) && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 ml-4">
                     <button
                       onClick={handleDownload}
                       className="px-4 py-2 text-sm font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-all shadow-sm hover:shadow border border-primary-400 flex items-center gap-2"
@@ -345,25 +488,64 @@ export const MongoDBDetails: React.FC = () => {
 
           {mongoDBDetails && mongoDBDetails.eventDetails && mongoDBDetails.eventDetails.length > 0 && (
             <div className="space-y-6">
-              <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg p-4 border border-primary-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-primary-700 mb-2">Results</h2>
-                    <p className="text-primary-600">
-                      Found {mongoDBDetails.eventDetails.length} event(s)
-                    </p>
+              <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg p-6 border border-primary-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-primary-700 mb-2">Results Summary</h2>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-primary-600 font-medium">
+                        Found {mongoDBDetails.eventDetails.length} event(s)
+                        {environment && (
+                          <span className="text-primary-500 ml-2">• Environment: {environment}</span>
+                        )}
+                      </p>
+                      {mongoDBDetails.status && (
+                        <p className={`text-sm font-semibold ${
+                          mongoDBDetails.status === 'Success' 
+                            ? 'text-green-700' 
+                            : mongoDBDetails.status === 'Failure' 
+                            ? 'text-red-700' 
+                            : 'text-yellow-700'
+                        }`}>
+                          Status: {mongoDBDetails.status}
+                          {mongoDBDetails.message && ` - ${mongoDBDetails.message}`}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleDownload}
-                      className="px-4 py-2 text-sm font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-all shadow-sm hover:shadow border border-primary-400 flex items-center gap-2"
-                      title="Download as Excel"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Download Excel
-                    </button>
+                  <div className="flex items-center gap-4 ml-4">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleDownload}
+                        className="px-4 py-2 text-sm font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-all shadow-sm hover:shadow border border-primary-400 flex items-center gap-2"
+                        title="Download as Excel"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Download Excel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-6 mt-4 pt-4 border-t border-primary-300">
+                  <div className="text-center px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {mongoDBDetails.eventDetails.filter(e => e.mongoDBData).length}
+                    </div>
+                    <div className="text-xs text-gray-600 font-medium">With MongoDB Data</div>
+                  </div>
+                  <div className="text-center px-4 py-2 bg-red-50 rounded-lg border border-red-200">
+                    <div className="text-2xl font-bold text-red-600">
+                      {mongoDBDetails.eventDetails.filter(e => e.redisData).length}
+                    </div>
+                    <div className="text-xs text-gray-600 font-medium">With Redis Data</div>
+                  </div>
+                  <div className="text-center px-4 py-2 bg-green-50 rounded-lg border border-green-200">
+                    <div className="text-2xl font-bold text-green-600">
+                      {mongoDBDetails.eventDetails.reduce((sum, e) => sum + (e.downstreamDetails?.length || 0), 0)}
+                    </div>
+                    <div className="text-xs text-gray-600 font-medium">Total Downstreams</div>
                   </div>
                 </div>
               </div>

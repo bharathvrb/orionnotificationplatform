@@ -101,6 +101,17 @@ export const OnboardForm: React.FC = () => {
     }
   };
 
+  const handleSelectAllCriteria = (selectAll: boolean) => {
+    setRequest((prev) => ({
+      ...prev,
+      requestCriteria: selectAll ? CRITERIA_OPTIONS.map(opt => opt.value) : []
+    }));
+    // Mark form as changed if it was previously submitted
+    if (hasSubmitted) {
+      setFormHasChanged(true);
+    }
+  };
+
   const validate = () => {
     const errors = validateRequest(request);
     const errorMap: Record<string, string> = {};
@@ -111,28 +122,92 @@ export const OnboardForm: React.FC = () => {
     return errors.length === 0;
   };
 
+  const [operationStatus, setOperationStatus] = useState<{
+    type: 'success' | 'error' | 'warning' | null;
+    message: string;
+    statusCode?: number | null;
+  } | null>(null);
+
   const mutation = useMutation({
     mutationFn: onboardOnp,
     onSuccess: (data) => {
-      setTaskResults(data.tasks || []);
+      const tasks = data.tasks || [];
+      setTaskResults(tasks);
       setLastResponseData(data);
       setHasSubmitted(true);
       setFormHasChanged(false);
+      
+      // Determine overall operation status
+      const successCount = tasks.filter(t => t.status === 'Success').length;
+      const failureCount = tasks.filter(t => t.status === 'Failure').length;
+      const partialCount = tasks.filter(t => t.status === 'Partial').length;
+      
+      if (failureCount === 0 && partialCount === 0) {
+        setOperationStatus({
+          type: 'success',
+          message: `Operation completed successfully! All ${tasks.length} task(s) completed successfully in ${environment} environment.`,
+        });
+      } else if (failureCount > 0) {
+        setOperationStatus({
+          type: 'error',
+          message: `Operation completed with errors. ${failureCount} task(s) failed, ${successCount} succeeded in ${environment} environment. Please review the details below.`,
+        });
+      } else if (partialCount > 0) {
+        setOperationStatus({
+          type: 'warning',
+          message: `Operation completed with partial success. ${partialCount} task(s) completed partially, ${successCount} succeeded in ${environment} environment. Please review the details below.`,
+        });
+      }
     },
     onError: (error: Error) => {
+      // Extract status code
+      const errorAny = error as any;
+      const statusCode = errorAny?.response?.status || errorAny?.status || null;
+      
+      // Extract more informative error message
+      let errorMessage = error.message;
+      
+      // Check if error contains response data
+      if (errorAny?.response?.data) {
+        const responseData = errorAny.response.data;
+        if (typeof responseData === 'string') {
+          errorMessage = responseData;
+        } else if (responseData.message) {
+          errorMessage = responseData.message;
+        } else if (responseData.error) {
+          errorMessage = responseData.error;
+        }
+      }
+      
+      // Add status code to error message
+      if (statusCode) {
+        errorMessage = `[HTTP ${statusCode}] ${errorMessage}`;
+      }
+      
+      // Add environment context if available
+      if (environment && !errorMessage.includes(environment)) {
+        errorMessage = `${errorMessage} (Environment: ${environment})`;
+      }
+      
       const errorResult = {
-        task: 'Error',
+        task: 'Operation Error',
         status: 'Failure' as const,
-        message: error.message,
+        message: errorMessage,
       };
       setTaskResults([errorResult]);
       setLastResponseData({ 
-        error: error.message,
+        error: errorMessage,
         tasks: [errorResult],
         status: 'Failure',
       });
       setHasSubmitted(true);
       setFormHasChanged(false);
+      
+      setOperationStatus({
+        type: 'error',
+        message: `Operation failed: ${errorMessage}. Please check your request and try again.`,
+        statusCode: statusCode,
+      });
     },
   });
 
@@ -192,6 +267,10 @@ export const OnboardForm: React.FC = () => {
 
     // Store request data for download
     setLastRequestData(requestWithEnvironment);
+    
+    // Clear previous operation status
+    setOperationStatus(null);
+    
     mutation.mutate(requestWithEnvironment);
   };
 
@@ -319,9 +398,25 @@ export const OnboardForm: React.FC = () => {
 
               {/* Request Criteria */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-primary-700 mb-3">
-                  Request Criteria *
-                </label>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-semibold text-primary-700">
+                    Request Criteria *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allSelected = CRITERIA_OPTIONS.every(opt => 
+                        request.requestCriteria?.includes(opt.value)
+                      );
+                      handleSelectAllCriteria(!allSelected);
+                    }}
+                    className="text-xs font-medium text-primary-600 hover:text-primary-700 px-2 py-1 rounded hover:bg-primary-100 transition-colors"
+                  >
+                    {CRITERIA_OPTIONS.every(opt => 
+                      request.requestCriteria?.includes(opt.value)
+                    ) ? 'Deselect All' : 'Select All'}
+                  </button>
+                </div>
                 <div className="space-y-3 bg-primary-50 rounded-lg p-4 border-2 border-primary-300">
                   {CRITERIA_OPTIONS.map((option) => (
                     <label
@@ -616,9 +711,79 @@ export const OnboardForm: React.FC = () => {
             </div>
 
             {/* Task Results */}
+            {/* Operation Status Banner */}
+            {operationStatus && (
+              <div className={`mb-6 p-5 rounded-lg border-l-4 ${
+                operationStatus.type === 'success'
+                  ? 'bg-green-50 border-green-400'
+                  : operationStatus.type === 'error'
+                  ? 'bg-red-50 border-red-400'
+                  : 'bg-yellow-50 border-yellow-400'
+              }`}>
+                <div className="flex items-start">
+                  {operationStatus.type === 'success' ? (
+                    <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  ) : operationStatus.type === 'error' ? (
+                    <svg className="w-5 h-5 text-red-400 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 text-yellow-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  <div className="flex-1">
+                    <p className={`font-semibold mb-1 ${
+                      operationStatus.type === 'success'
+                        ? 'text-green-800'
+                        : operationStatus.type === 'error'
+                        ? 'text-red-800'
+                        : 'text-yellow-800'
+                    }`}>
+                      {operationStatus.type === 'success' ? 'Success' : 
+                       operationStatus.type === 'error' ? 'Error' : 'Warning'}
+                    </p>
+                    <p className={`text-sm ${
+                      operationStatus.type === 'success'
+                        ? 'text-green-700'
+                        : operationStatus.type === 'error'
+                        ? 'text-red-700'
+                        : 'text-yellow-700'
+                    }`}>
+                      {operationStatus.message}
+                    </p>
+                    {operationStatus.statusCode && (
+                      <div className={`mt-2 flex items-center gap-2 text-xs ${
+                        operationStatus.type === 'success'
+                          ? 'text-green-600'
+                          : operationStatus.type === 'error'
+                          ? 'text-red-600'
+                          : 'text-yellow-600'
+                      }`}>
+                        <span className="px-2 py-1 bg-white bg-opacity-50 rounded border border-current font-mono font-semibold">
+                          HTTP Status: {operationStatus.statusCode}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setOperationStatus(null)}
+                    className="ml-4 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Dismiss"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {(mutation.isPending || taskResults.length > 0) && (
-              <TaskResults 
-                results={taskResults} 
+              <TaskResults
+                results={taskResults}
                 isLoading={mutation.isPending}
                 requestData={lastRequestData}
                 responseData={lastResponseData}
@@ -706,8 +871,21 @@ export const OnboardForm: React.FC = () => {
                 </div>
 
                 {tokenError && (
-                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
-                    <p className="text-sm text-red-600 font-medium">{tokenError}</p>
+                  <div className="bg-red-50 border-l-4 border-red-400 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <svg className="w-5 h-5 text-red-400 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-red-800 mb-1">Token Generation Error</p>
+                        <p className="text-sm text-red-700">{tokenError}</p>
+                        {environment && (
+                          <p className="text-xs text-red-600 mt-2">
+                            Environment: <span className="font-semibold">{environment}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
 
