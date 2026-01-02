@@ -416,14 +416,17 @@ export const OnboardForm: React.FC = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowTokenModal(true)}
-                    disabled={!environment}
+                    onClick={() => {
+                      updateRequest({ authorization: '' }); // Clear manual token when opening Generate Token modal
+                      setShowTokenModal(true);
+                    }}
+                    disabled={!environment || (request.authorization && request.authorization.trim().length > 0)}
                     className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                      environment
+                      environment && (!request.authorization || !request.authorization.trim())
                         ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
-                    title={!environment ? 'Please select an environment first' : 'Generate token'}
+                    title={!environment ? 'Please select an environment first' : (request.authorization && request.authorization.trim()) ? 'Clear the token field to generate a new token' : 'Generate token'}
                   >
                     Generate Token
                   </button>

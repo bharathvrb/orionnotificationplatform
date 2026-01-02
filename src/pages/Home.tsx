@@ -816,15 +816,11 @@ export const Home: React.FC = () => {
                   <div>
                     <h3 style={{ 
                       fontSize: isFeatured ? '1.25rem' : '1.125rem', 
-                      fontWeight: '800', 
-                      color: isComingSoon ? 'rgba(30, 64, 175, 0.6)' : '#1e293b', 
+                      fontWeight: '700', 
+                      color: isComingSoon ? 'rgba(30, 64, 175, 0.6)' : '#1e40af', 
                       marginBottom: '0.625rem',
-                      letterSpacing: '-0.02em',
-                      lineHeight: '1.3',
-                      background: isComingSoon ? 'none' : 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
-                      WebkitBackgroundClip: isComingSoon ? 'none' : 'text',
-                      WebkitTextFillColor: isComingSoon ? 'rgba(30, 64, 175, 0.6)' : 'transparent',
-                      backgroundClip: isComingSoon ? 'none' : 'text'
+                      letterSpacing: '-0.01em',
+                      lineHeight: '1.3'
                     }}>
                       {card.title}
                     </h3>

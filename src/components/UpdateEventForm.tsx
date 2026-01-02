@@ -290,14 +290,18 @@ export const UpdateEventForm: React.FC = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowTokenModal(true)}
-                    disabled={!environment || mutation.isPending}
+                    onClick={() => {
+                      setAuthorization(''); // Clear manual token when opening Generate Token modal
+                      updateRequest({ authorization: '' });
+                      setShowTokenModal(true);
+                    }}
+                    disabled={!environment || mutation.isPending || ((authorization && authorization.trim().length > 0) || (request.authorization && request.authorization.trim().length > 0))}
                     className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                      environment && !mutation.isPending
+                      environment && !mutation.isPending && !authorization?.trim() && !request.authorization?.trim()
                         ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
-                    title={!environment ? 'Please select an environment first' : 'Generate token'}
+                    title={!environment ? 'Please select an environment first' : ((authorization && authorization.trim()) || (request.authorization && request.authorization.trim())) ? 'Clear the token field to generate a new token' : 'Generate token'}
                   >
                     Generate Token
                   </button>
