@@ -9,6 +9,9 @@ applications:
     env:
       NODE_ENV: production
       NPM_CONFIG_PRODUCTION: false
+      # Backend API URL - base URL only (without /onp/v1)
+      # Proxy will map /api/* to ${BACKEND_API_URL}/onp/v1/*
+      BACKEND_API_URL: https://onppoc-qa.as-g8.cf.comcast.net
     stack: cflinuxfs4
     # Health check endpoint
     health-check-type: http
