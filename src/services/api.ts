@@ -1,6 +1,5 @@
 import axios, { type AxiosError } from 'axios';
 import type { OnboardRequest, OnboardResponse, KafkaDetailsRequest, KafkaDetailsListResponse, TaskResult, MongoDBDetailsRequest, MongoDBDetailsResponse } from '../types';
-import { getValidAccessToken } from './auth';
 
 // Use backend API URL directly (with /onp/v1 path)
 // Frontend now calls backend directly at /onp/v1/{endpoint} instead of using /api proxy
@@ -12,26 +11,11 @@ const API_BASE_URL = BACKEND_BASE_URL.endsWith('/onp/v1')
   ? BACKEND_BASE_URL 
   : `${BACKEND_BASE_URL.replace(/\/$/, '')}/onp/v1`;
 
-// Create axios instance with interceptors for auth
+// Create axios instance for backend API calls
+// Note: We do NOT use SSO token interceptor here because backend API requires
+// either manually entered tokens or SAT-generated tokens
+// The backend has its own authorization handling functionality
 export const apiClient = axios.create();
-
-// Add auth token to requests
-apiClient.interceptors.request.use(
-  async (config) => {
-    // Only add token if Authorization header is not already set
-    // This allows custom tokens from forms to take precedence
-    if (!config.headers.Authorization) {
-      const token = await getValidAccessToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 // Backend response structure
 interface ONPEventResponse {
@@ -130,9 +114,8 @@ export const onboardOnp = async (
       headers['gitAccessToken'] = request.gitAccessToken;
     }
     
-    // Handle authorization token
-    // If custom authorization is provided, use it (overrides SSO token from interceptor)
-    // Otherwise, the interceptor will add the SSO token
+    // Handle authorization token (manual entry or SAT-generated)
+    // Backend handles authorization - no automatic SSO token
     if (request.authorization) {
       // Prefix "Bearer " if not already present
       const token = request.authorization.trim();
@@ -210,14 +193,19 @@ export const onboardOnp = async (
     // Add branchName if available (backend supports it but frontend doesn't currently collect it)
     // This can be added to the form later if needed
 
-    // Ensure Authorization header is properly set if provided
-    const requestConfig: any = { headers };
+    // Ensure Authorization header is properly set and Content-Type is included
+    const requestConfig: any = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers  // Authorization from headers or will be added by interceptor
+      }
+    };
     
-    // Log for debugging (remove in production if needed)
+    // Log for debugging
     if (headers.Authorization) {
-      console.log('Sending request with Authorization header');
+      console.log('Sending onboard request with Authorization header (manual/SAT token)');
     } else {
-      console.warn('No Authorization header in request - token may be missing');
+      console.warn('No Authorization header in request - token must be provided manually or via SAT');
     }
 
     const response = await apiClient.post<ONPEventResponse>(
@@ -312,23 +300,34 @@ export const fetchKafkaDetails = async (
       headers['environment'] = environment;
     }
 
-    // Add custom authorization token if provided (overrides SSO token from interceptor)
+    // Add authorization token if provided (manual entry or SAT-generated)
+    // Backend handles authorization - no automatic SSO token
     if (authorization) {
       const token = authorization.trim();
       headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    } else {
+      console.warn('No authorization token provided for Kafka details - backend may reject the request');
     }
+
+    // Prepare request config with Content-Type and headers
+    const requestConfig: any = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers  // Authorization from headers or will be added by interceptor
+      }
+    };
 
     // Log for debugging
     if (headers.Authorization) {
-      console.log('Sending Kafka details request with Authorization header');
+      console.log('Sending Kafka details request with Authorization header (manual/SAT token)');
     } else {
-      console.warn('No Authorization header in Kafka details request - token may be missing');
+      console.warn('No Authorization header in Kafka details request - token must be provided manually or via SAT');
     }
 
     const response = await apiClient.post<KafkaDetailsListResponse>(
       `${API_BASE_URL}/kafkaDetails`,
       request,
-      { headers }
+      requestConfig
     );
 
     return response.data;
@@ -424,10 +423,13 @@ export const fetchMongoDBDetails = async (
       headers['environment'] = environment;
     }
 
-    // Add custom authorization token if provided (overrides SSO token from interceptor)
+    // Add authorization token if provided (manual entry or SAT-generated)
+    // Backend handles authorization - no automatic SSO token
     if (authorization) {
       const token = authorization.trim();
       headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    } else {
+      console.warn('No authorization token provided for Kafka details - backend may reject the request');
     }
 
     // Log for debugging
@@ -437,15 +439,26 @@ export const fetchMongoDBDetails = async (
       body: request
     });
 
+    // Prepare request config - ensure Authorization is preserved
+    // The interceptor will add Authorization if not present, but we should preserve any custom Authorization
+    const requestConfig: any = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers  // Spread headers last so custom Authorization (if provided) takes precedence
+      }
+    };
+
+    // Log final headers (without exposing token)
+    console.log('[MongoDB Details] Request config:', {
+      url: `${API_BASE_URL}/mongoDBDetails`,
+      hasAuthorization: !!(requestConfig.headers.Authorization || requestConfig.headers.authorization),
+      headersKeys: Object.keys(requestConfig.headers)
+    });
+    
     const response = await apiClient.post<MongoDBDetailsResponse>(
       `${API_BASE_URL}/mongoDBDetails`,
       request,
-      { 
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json'
-        }
-      }
+      requestConfig
     );
 
     return response.data;
@@ -550,10 +563,13 @@ export const updateOnp = async (
       headers['requestCriteria'] = request.requestCriteria.join(',');
     }
     
-    // Handle authorization token
+    // Handle authorization token (manual entry or SAT-generated)
+    // Backend handles authorization - no automatic SSO token
     if (request.authorization) {
       const token = request.authorization.trim();
       headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    } else {
+      console.warn('No authorization token provided for update - backend may reject the request');
     }
 
     // Build request body - backend expects ONPEventRequest structure
@@ -612,12 +628,18 @@ export const updateOnp = async (
       body.subscriberName = request.subscriberName;
     }
 
-    const requestConfig: any = { headers };
+    // Ensure Content-Type is included and Authorization is preserved
+    const requestConfig: any = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers  // Authorization from headers or will be added by interceptor
+      }
+    };
     
     if (headers.Authorization) {
-      console.log('Sending update request with Authorization header');
+      console.log('Sending update request with Authorization header (manual/SAT token)');
     } else {
-      console.warn('No Authorization header in update request - token may be missing');
+      console.warn('No Authorization header in update request - token must be provided manually or via SAT');
     }
 
     const response = await apiClient.put<ONPEventResponse>(
