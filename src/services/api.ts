@@ -399,6 +399,11 @@ export const fetchMongoDBDetails = async (
   authorization?: string
 ): Promise<MongoDBDetailsResponse> => {
   try {
+    // Validate request structure
+    if (!request || !request.eventNames || !Array.isArray(request.eventNames) || request.eventNames.length === 0) {
+      throw new Error('Invalid request: eventNames array is required and must not be empty');
+    }
+
     const headers: Record<string, string> = {};
     
     if (trackingId) {
@@ -420,16 +425,21 @@ export const fetchMongoDBDetails = async (
     }
 
     // Log for debugging
-    if (headers.Authorization) {
-      console.log('Sending MongoDB details request with Authorization header');
-    } else {
-      console.warn('No Authorization header in MongoDB details request - token may be missing');
-    }
+    console.log('MongoDB Details Request:', {
+      url: `${API_BASE_URL}/mongoDBDetails`,
+      headers: { ...headers, Authorization: headers.Authorization ? '***masked***' : undefined },
+      body: request
+    });
 
     const response = await apiClient.post<MongoDBDetailsResponse>(
       `${API_BASE_URL}/mongoDBDetails`,
       request,
-      { headers }
+      { 
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        }
+      }
     );
 
     return response.data;
@@ -438,6 +448,22 @@ export const fetchMongoDBDetails = async (
       const axiosError = error as AxiosError<any>;
       const status = axiosError.response?.status;
       const responseData = axiosError.response?.data;
+      const responseHeaders = axiosError.response?.headers;
+
+      // Log error details for debugging
+      console.error('MongoDB Details Request Error:', {
+        status,
+        statusText: axiosError.response?.statusText,
+        headers: responseHeaders,
+        data: responseData,
+        message: axiosError.message,
+        request: {
+          url: axiosError.config?.url,
+          method: axiosError.config?.method,
+          headers: axiosError.config?.headers,
+          data: axiosError.config?.data
+        }
+      });
 
       // Check if backend returned a structured MongoDBDetailsResponse
       if (status === 400 && responseData && typeof responseData === 'object' && 
@@ -448,19 +474,26 @@ export const fetchMongoDBDetails = async (
 
       // Handle different error scenarios with user-friendly messages
       if (status === 400) {
-        let errorMessage = 'Invalid request. ';
-        if (responseData) {
-          if (typeof responseData === 'string') {
-            errorMessage += responseData;
-          } else if (responseData.message) {
-            errorMessage += responseData.message;
-          } else if (responseData.error) {
-            errorMessage += responseData.error;
-          } else {
-            errorMessage += 'One or more event names may not exist in the specified environment. Please verify the event names and try again.';
-          }
+        let errorMessage = 'Bad Request (400): ';
+        
+        // Check if response has content
+        if (responseData === null || responseData === undefined || 
+            (typeof responseData === 'string' && responseData.trim() === '') ||
+            (typeof responseData === 'object' && Object.keys(responseData).length === 0)) {
+          // Empty response body - likely a validation error before reaching controller
+          errorMessage += 'Request validation failed. Please check: ';
+          errorMessage += '1) Request body structure is correct (eventNames array is required), ';
+          errorMessage += '2) All required headers are present (trackingId), ';
+          errorMessage += '3) Content-Type is application/json. ';
+          errorMessage += `Request sent: ${JSON.stringify(request)}`;
+        } else if (typeof responseData === 'string') {
+          errorMessage += responseData;
+        } else if (responseData.message) {
+          errorMessage += responseData.message;
+        } else if (responseData.error) {
+          errorMessage += responseData.error;
         } else {
-          errorMessage += 'One or more event names may not exist in the specified environment. Please verify the event names and try again.';
+          errorMessage += 'Invalid request format or missing required fields. Please verify the request structure and try again.';
         }
         throw new Error(errorMessage);
       } else if (status === 401) {

@@ -13,8 +13,8 @@ const PORT = process.env.PORT || 8080;
 const distPath = join(__dirname, 'dist');
 const indexHtmlPath = join(distPath, 'index.html');
 
-// Get backend API URL from environment variable
-const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://onppoc-qa.as-g8.cf.comcast.net/onp/v1';
+// Get backend API URL from environment variable (base URL only, without /onp/v1)
+const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://onppoc-qa.as-g8.cf.comcast.net';
 
 // Parse JSON bodies for proxy requests
 app.use(express.json());
@@ -29,7 +29,7 @@ app.use('/api', createProxyMiddleware({
   target: BACKEND_API_URL,
   changeOrigin: true,
   pathRewrite: {
-    '^/api': '', // Remove /api prefix when forwarding to backend
+    '^/api': '/onp/v1', // Map /api to /onp/v1 when forwarding to backend
   },
   onProxyReq: (proxyReq, req, res) => {
     // Forward all headers from the original request
