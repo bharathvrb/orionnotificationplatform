@@ -356,13 +356,13 @@ export const MongoDBDetails: React.FC = () => {
                     setAuthorization(''); // Clear manual token when opening Generate Token modal
                     setShowTokenModal(true);
                   }}
-                  disabled={!environment || loading || authorization.trim().length > 0}
+                  disabled={!environment || loading || !!(authorization && authorization.trim().length > 0)}
                   className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                    environment && !loading && !authorization.trim()
+                    !!(environment && !loading && (!authorization || !authorization.trim()))
                       ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
-                  title={!environment ? 'Please select an environment first' : authorization.trim() ? 'Clear the token field to generate a new token' : 'Generate token'}
+                  title={!environment ? 'Please select an environment first' : (authorization && authorization.trim()) ? 'Clear the token field to generate a new token' : 'Generate token'}
                 >
                   Generate Token
                 </button>

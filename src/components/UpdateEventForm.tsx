@@ -295,9 +295,9 @@ export const UpdateEventForm: React.FC = () => {
                       updateRequest({ authorization: '' });
                       setShowTokenModal(true);
                     }}
-                    disabled={!environment || mutation.isPending || ((authorization && authorization.trim().length > 0) || (request.authorization && request.authorization.trim().length > 0))}
+                    disabled={!environment || mutation.isPending || !!((authorization && authorization.trim().length > 0) || (request.authorization && request.authorization.trim().length > 0))}
                     className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                      environment && !mutation.isPending && !authorization?.trim() && !request.authorization?.trim()
+                      !!(environment && !mutation.isPending && !authorization?.trim() && !request.authorization?.trim())
                         ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
