@@ -2,9 +2,15 @@ import axios, { type AxiosError } from 'axios';
 import type { OnboardRequest, OnboardResponse, KafkaDetailsRequest, KafkaDetailsListResponse, TaskResult, MongoDBDetailsRequest, MongoDBDetailsResponse } from '../types';
 import { getValidAccessToken } from './auth';
 
-// Use proxy path in production (when VITE_API_BASE_URL is not set)
-// This avoids CORS issues by proxying through the Express server
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// Use backend API URL directly (with /onp/v1 path)
+// Frontend now calls backend directly at /onp/v1/{endpoint} instead of using /api proxy
+// If VITE_API_BASE_URL is set, it should be the full backend URL (e.g., https://onppoc-qa.as-g8.cf.comcast.net)
+// The /onp/v1 path will be appended automatically (unless already included)
+const BACKEND_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://onppoc-qa.as-g8.cf.comcast.net';
+// Ensure /onp/v1 is appended (avoid duplication if already present)
+const API_BASE_URL = BACKEND_BASE_URL.endsWith('/onp/v1') 
+  ? BACKEND_BASE_URL 
+  : `${BACKEND_BASE_URL.replace(/\/$/, '')}/onp/v1`;
 
 // Create axios instance with interceptors for auth
 export const apiClient = axios.create();
