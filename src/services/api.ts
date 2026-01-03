@@ -17,6 +17,44 @@ const API_BASE_URL = BACKEND_BASE_URL.endsWith('/onp/v1')
 // The backend has its own authorization handling functionality
 export const apiClient = axios.create();
 
+// Add request interceptor to log and verify headers are being sent correctly
+apiClient.interceptors.request.use(
+  (config) => {
+    // Log request details for debugging - CRITICAL for troubleshooting CORS issues
+    const authHeader = config.headers?.Authorization || config.headers?.authorization;
+    const allHeaders = config.headers ? Object.keys(config.headers) : [];
+    
+    if (authHeader) {
+      console.log('[API Request] ✅ Authorization header IS present:', {
+        url: config.url,
+        method: config.method?.toUpperCase(),
+        headerName: config.headers?.Authorization ? 'Authorization' : 'authorization',
+        headerLength: typeof authHeader === 'string' ? authHeader.length : 0,
+        headerPrefix: typeof authHeader === 'string' ? authHeader.substring(0, 15) : 'N/A',
+        allHeaderKeys: allHeaders
+      });
+    } else {
+      console.error('[API Request] ❌ NO Authorization header found:', {
+        url: config.url,
+        method: config.method?.toUpperCase(),
+        allHeaderKeys: allHeaders,
+        headerCount: allHeaders.length
+      });
+    }
+    
+    // Ensure headers object exists (axios requirement)
+    if (!config.headers) {
+      config.headers = {} as any;
+    }
+    
+    return config;
+  },
+  (error) => {
+    console.error('[API Request] Interceptor error:', error);
+    return Promise.reject(error);
+  }
+);
+
 // Backend response structure
 interface ONPEventResponse {
   eventName?: string;
@@ -221,6 +259,24 @@ export const onboardOnp = async (
       const axiosError = error as AxiosError<any>;
       const status = axiosError.response?.status;
       const responseData = axiosError.response?.data;
+      const errorMessage = axiosError.message;
+
+      // Handle network errors (CORS, connection issues, etc.)
+      if (!status && (axiosError.code === 'ERR_NETWORK' || errorMessage.includes('Network Error'))) {
+        let networkErrorMessage = 'Network Error: ';
+        if (errorMessage.includes('Full authentication is required') || errorMessage.includes('authentication')) {
+          networkErrorMessage += 'Authentication required. The Authorization header may not be reaching the backend. ';
+          networkErrorMessage += 'This is likely a CORS issue - ensure the backend CORS configuration allows: ';
+          networkErrorMessage += '1) Authorization header in Access-Control-Allow-Headers, ';
+          networkErrorMessage += '2) Your frontend origin in Access-Control-Allow-Origin.';
+        } else if (errorMessage.includes('CORS') || errorMessage.includes('cors')) {
+          networkErrorMessage += 'CORS error - The backend may not be allowing requests from this origin. ';
+          networkErrorMessage += 'Please verify CORS configuration allows the Authorization header.';
+        } else {
+          networkErrorMessage += errorMessage || 'Unable to connect to the backend. Please check your network connection and backend URL.';
+        }
+        throw new Error(networkErrorMessage);
+      }
 
       // Check if backend returned a structured ONPEventResponse (even on error)
       if (responseData && typeof responseData === 'object' && 
@@ -336,6 +392,24 @@ export const fetchKafkaDetails = async (
       const axiosError = error as AxiosError<any>;
       const status = axiosError.response?.status;
       const responseData = axiosError.response?.data;
+      const errorMessage = axiosError.message;
+
+      // Handle network errors (CORS, connection issues, etc.)
+      if (!status && (axiosError.code === 'ERR_NETWORK' || errorMessage.includes('Network Error'))) {
+        let networkErrorMessage = 'Network Error: ';
+        if (errorMessage.includes('Full authentication is required') || errorMessage.includes('authentication')) {
+          networkErrorMessage += 'Authentication required. The Authorization header may not be reaching the backend. ';
+          networkErrorMessage += 'This is likely a CORS issue - ensure the backend CORS configuration allows: ';
+          networkErrorMessage += '1) Authorization header in Access-Control-Allow-Headers, ';
+          networkErrorMessage += '2) Your frontend origin in Access-Control-Allow-Origin.';
+        } else if (errorMessage.includes('CORS') || errorMessage.includes('cors')) {
+          networkErrorMessage += 'CORS error - The backend may not be allowing requests from this origin. ';
+          networkErrorMessage += 'Please verify CORS configuration allows the Authorization header.';
+        } else {
+          networkErrorMessage += errorMessage || 'Unable to connect to the backend. Please check your network connection and backend URL.';
+        }
+        throw new Error(networkErrorMessage);
+      }
 
       // Handle different error scenarios with user-friendly messages
       if (status === 400) {
@@ -468,6 +542,24 @@ export const fetchMongoDBDetails = async (
       const status = axiosError.response?.status;
       const responseData = axiosError.response?.data;
       const responseHeaders = axiosError.response?.headers;
+      const errorMessage = axiosError.message;
+
+      // Handle network errors (CORS, connection issues, etc.)
+      if (!status && (axiosError.code === 'ERR_NETWORK' || errorMessage.includes('Network Error'))) {
+        let networkErrorMessage = 'Network Error: ';
+        if (errorMessage.includes('Full authentication is required') || errorMessage.includes('authentication')) {
+          networkErrorMessage += 'Authentication required. The Authorization header may not be reaching the backend. ';
+          networkErrorMessage += 'This is likely a CORS issue - ensure the backend CORS configuration allows: ';
+          networkErrorMessage += '1) Authorization header in Access-Control-Allow-Headers, ';
+          networkErrorMessage += '2) Your frontend origin in Access-Control-Allow-Origin.';
+        } else if (errorMessage.includes('CORS') || errorMessage.includes('cors')) {
+          networkErrorMessage += 'CORS error - The backend may not be allowing requests from this origin. ';
+          networkErrorMessage += 'Please verify CORS configuration allows the Authorization header.';
+        } else {
+          networkErrorMessage += errorMessage || 'Unable to connect to the backend. Please check your network connection and backend URL.';
+        }
+        throw new Error(networkErrorMessage);
+      }
 
       // Log error details for debugging
       console.error('MongoDB Details Request Error:', {
@@ -655,6 +747,24 @@ export const updateOnp = async (
       const axiosError = error as AxiosError<any>;
       const status = axiosError.response?.status;
       const responseData = axiosError.response?.data;
+      const errorMessage = axiosError.message;
+
+      // Handle network errors (CORS, connection issues, etc.)
+      if (!status && (axiosError.code === 'ERR_NETWORK' || errorMessage.includes('Network Error'))) {
+        let networkErrorMessage = 'Network Error: ';
+        if (errorMessage.includes('Full authentication is required') || errorMessage.includes('authentication')) {
+          networkErrorMessage += 'Authentication required. The Authorization header may not be reaching the backend. ';
+          networkErrorMessage += 'This is likely a CORS issue - ensure the backend CORS configuration allows: ';
+          networkErrorMessage += '1) Authorization header in Access-Control-Allow-Headers, ';
+          networkErrorMessage += '2) Your frontend origin in Access-Control-Allow-Origin.';
+        } else if (errorMessage.includes('CORS') || errorMessage.includes('cors')) {
+          networkErrorMessage += 'CORS error - The backend may not be allowing requests from this origin. ';
+          networkErrorMessage += 'Please verify CORS configuration allows the Authorization header.';
+        } else {
+          networkErrorMessage += errorMessage || 'Unable to connect to the backend. Please check your network connection and backend URL.';
+        }
+        throw new Error(networkErrorMessage);
+      }
 
       // Check if backend returned a structured ONPEventResponse (even on error)
       if (responseData && typeof responseData === 'object' && 
