@@ -97,7 +97,13 @@ export const TaskResults: React.FC<TaskResultsProps> = ({
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = (e?: React.MouseEvent) => {
+    // Prevent any form submission or event propagation
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     // Allow download even if there are errors or failures
     const hasData = requestData || responseData || results.length > 0;
     if (!hasData) {
@@ -194,6 +200,7 @@ export const TaskResults: React.FC<TaskResultsProps> = ({
         </h3>
         {(results.length > 0 || requestData || responseData) && (
           <button
+            type="button"
             onClick={handleDownload}
             className="px-4 py-2 text-sm font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-all shadow-sm hover:shadow border border-primary-400 flex items-center gap-2"
             title="Download as Excel (includes errors)"

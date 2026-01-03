@@ -61,7 +61,13 @@ export const KafkaDetails: React.FC = () => {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [formHasChanged, setFormHasChanged] = useState(false);
 
-  const handleDownload = () => {
+  const handleDownload = (e?: React.MouseEvent) => {
+    // Prevent any form submission or event propagation
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     // Allow download even if there are errors
     const hasData = kafkaDetails || lastRequestData || error;
     if (!hasData) {
@@ -567,6 +573,7 @@ export const KafkaDetails: React.FC = () => {
                 {(error || lastRequestData) && (
                   <div className="flex gap-2 ml-4">
                     <button
+                      type="button"
                       onClick={handleDownload}
                       className="px-4 py-2 text-sm font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-all shadow-sm hover:shadow border border-primary-400 flex items-center gap-2"
                       title="Download error details as Excel"
@@ -613,6 +620,7 @@ export const KafkaDetails: React.FC = () => {
                   <div className="flex items-center gap-4 ml-4">
                     <div className="flex gap-2">
                       <button
+                        type="button"
                         onClick={handleDownload}
                         className="px-4 py-2 text-sm font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-all shadow-sm hover:shadow border border-primary-400 flex items-center gap-2"
                         title="Download as Excel"

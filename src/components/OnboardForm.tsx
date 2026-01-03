@@ -279,6 +279,7 @@ export const OnboardForm: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <button
+              type="button"
               onClick={() => navigate('/')}
               className="mb-4 flex items-center text-white hover:text-primary-100 transition-colors"
             >
@@ -732,6 +733,7 @@ export const OnboardForm: React.FC = () => {
                     )}
                   </div>
                   <button
+                    type="button"
                     onClick={() => setOperationStatus(null)}
                     className="ml-4 text-gray-400 hover:text-gray-600 transition-colors"
                     title="Dismiss"
@@ -776,6 +778,7 @@ export const OnboardForm: React.FC = () => {
                   Generate Authorization Token
                 </h2>
                 <button
+                  type="button"
                   onClick={() => {
                     setShowTokenModal(false);
                     setTokenError(null);
