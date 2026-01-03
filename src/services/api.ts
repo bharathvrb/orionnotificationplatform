@@ -15,7 +15,11 @@ const API_BASE_URL = BACKEND_BASE_URL.endsWith('/onp/v1')
 // Note: We do NOT use SSO token interceptor here because backend API requires
 // either manually entered tokens or SAT-generated tokens
 // The backend has its own authorization handling functionality
-export const apiClient = axios.create();
+// IMPORTANT: withCredentials must be true for CORS with credentials to work
+// This allows Authorization headers and cookies to be sent in cross-origin requests
+export const apiClient = axios.create({
+  withCredentials: true, // Required for CORS with credentials (Authorization header)
+});
 
 // Add request interceptor to log and verify headers are being sent correctly
 apiClient.interceptors.request.use(
@@ -232,7 +236,9 @@ export const onboardOnp = async (
     // This can be added to the form later if needed
 
     // Ensure Authorization header is properly set and Content-Type is included
+    // withCredentials is already set on the axios instance, but we ensure it here too
     const requestConfig: any = {
+      withCredentials: true, // Required for CORS with credentials
       headers: {
         'Content-Type': 'application/json',
         ...headers  // Authorization from headers or will be added by interceptor
@@ -366,7 +372,9 @@ export const fetchKafkaDetails = async (
     }
 
     // Prepare request config with Content-Type and headers
+    // withCredentials is required for CORS with credentials (Authorization header)
     const requestConfig: any = {
+      withCredentials: true, // Required for CORS with credentials
       headers: {
         'Content-Type': 'application/json',
         ...headers  // Authorization from headers or will be added by interceptor
@@ -515,7 +523,9 @@ export const fetchMongoDBDetails = async (
 
     // Prepare request config - ensure Authorization is preserved
     // The interceptor will add Authorization if not present, but we should preserve any custom Authorization
+    // withCredentials is required for CORS with credentials (Authorization header)
     const requestConfig: any = {
+      withCredentials: true, // Required for CORS with credentials
       headers: {
         'Content-Type': 'application/json',
         ...headers  // Spread headers last so custom Authorization (if provided) takes precedence
@@ -721,7 +731,9 @@ export const updateOnp = async (
     }
 
     // Ensure Content-Type is included and Authorization is preserved
+    // withCredentials is required for CORS with credentials (Authorization header)
     const requestConfig: any = {
+      withCredentials: true, // Required for CORS with credentials
       headers: {
         'Content-Type': 'application/json',
         ...headers  // Authorization from headers or will be added by interceptor
