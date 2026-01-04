@@ -1250,18 +1250,27 @@ const UserGuideContent: React.FC = () => {
           The New Event Onboarding page allows you to configure and onboard new events to the platform.
         </p>
         <h3 style={subHeadingStyle}>Step 1: Select Environment</h3>
-        <p style={textStyle}>Choose an environment from the dropdown. The environment selection appears first in a separate box. After selecting an environment, the remaining form fields will appear:</p>
+        <p style={textStyle}>Choose an environment from the dropdown menu at the top of the page. Once you select an environment, the form fields will automatically appear below. Available environments:</p>
         <ul style={listStyle}>
-          <li><strong>Development</strong>: DEV</li>
-          <li><strong>QA</strong>: QA</li>
-          <li><strong>Integration</strong>: INT</li>
-          <li><strong>Flex</strong>: FLX</li>
-          <li><strong>Training</strong>: TRN</li>
-          <li><strong>Staging</strong>: STG CH2-G2, STG HO-G4</li>
-          <li><strong>Production</strong>: PROD</li>
-          <li><strong>Business</strong>: BUS</li>
+          <li>DEV AS-G8</li>
+          <li>DEV HO-G2</li>
+          <li>QA AS-G8</li>
+          <li>QA HO-G2</li>
+          <li>INT AS-G8</li>
+          <li>INT HO-G2</li>
+          <li>FLX AS-G8</li>
+          <li>FLA HO-G2</li>
+          <li>TRN AS-G8</li>
+          <li>TRN HO-G2</li>
+          <li>STG CH2-G2</li>
+          <li>STG HO-G4</li>
+          <li>PROD G1</li>
+          <li>PROD AS-G6</li>
+          <li>PROD HO-G1</li>
+          <li>PROD HO-G3</li>
+          <li>BUS AS-G8</li>
+          <li>BUS HO-G2</li>
         </ul>
-        <p style={textStyle}><strong>Note:</strong> The simplified environment names (DEV, QA, INT, etc.) are displayed in the dropdown, but the system automatically maps them to the full backend environment names (e.g., DEV → DEV AS-G8).</p>
         <h3 style={subHeadingStyle}>Step 2: Authorization Token</h3>
         <p style={textStyle}>After selecting an environment, the Authorization Token section appears. You have two options:</p>
         <ol style={{ ...listStyle, listStyleType: 'decimal' }}>

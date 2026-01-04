@@ -275,7 +275,7 @@ export const OnboardForm: React.FC = () => {
 
   // Single Page - Environment selection first, then show form fields
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-blue-400 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-blue-400 to-blue-500 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <button

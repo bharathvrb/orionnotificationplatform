@@ -95,21 +95,31 @@ Quick links to important documentation:
 
 ## ONP Event Onboarding
 
-The ONP Event Onboarding page allows you to configure and onboard new events to the platform.
+The ONP Event Onboarding page allows you to configure and onboard new events to the platform. The form uses a single-page layout where environment selection appears first, and form fields automatically appear below once an environment is selected.
 
 ### Step 1: Select Environment
 
-1. Choose an environment from the dropdown:
-   - **Development**: DEV AS-G8, DEV HO-G2
-   - **QA**: QA AS-G8, QA HO-G2
-   - **Integration**: INT AS-G8, INT HO-G2
-   - **Flex**: FLX AS-G8, FLA HO-G2
-   - **Training**: TRN AS-G8, TRN HO-G2
-   - **Staging**: STG CH2-G2, STG HO-G4
-   - **Production**: PROD G1, PROD AS-G6, PROD HO-G1, PROD HO-G3
-   - **Business**: BUS AS-G8, BUS HO-G2
+1. Choose an environment from the dropdown menu at the top of the page. Available environments:
+   - DEV AS-G8
+   - DEV HO-G2
+   - QA AS-G8
+   - QA HO-G2
+   - INT AS-G8
+   - INT HO-G2
+   - FLX AS-G8
+   - FLA HO-G2
+   - TRN AS-G8
+   - TRN HO-G2
+   - STG CH2-G2
+   - STG HO-G4
+   - PROD G1
+   - PROD AS-G6
+   - PROD HO-G1
+   - PROD HO-G3
+   - BUS AS-G8
+   - BUS HO-G2
 
-2. Click "Continue" to proceed to the form
+2. Once you select an environment, the form fields will automatically appear below the environment selector. The selected environment will also be displayed in the header.
 
 ### Step 2: Configure Request Criteria
 
@@ -123,19 +133,19 @@ Select one or more request criteria based on your needs:
 
 2. **Kafka Topic**
    - Creates Kafka topics for event messaging
-   - Requires: Event Name, Subscriber Name, Number of Partitions, Replication Factor
+   - Requires: Subscriber Name, Number of Partitions, Replication Factor
 
 3. **Deployment Manifest**
    - Generates deployment manifest files
-   - Requires: Commit Message, Git Access Token
+   - Requires: Subscriber Name, Commit Message, Git Access Token
 
 4. **Orion Properties**
    - Creates Orion properties configuration
-   - Requires: Commit Message, Git Access Token
+   - Requires: Subscriber Name, Commit Message, Git Access Token
 
 5. **Fallback DB**
    - Configures fallback database settings
-   - Requires: Event Name, Subscriber Name, Downstream Details with HTTP Status Codes
+   - Requires: Downstream Details (each must include: Name, HTTP Status Code, Maintenance Flag, Max Retry Count, Retry Delay)
 
 6. **Concourse Vault**
    - Sets up Concourse Vault configuration
@@ -143,15 +153,29 @@ Select one or more request criteria based on your needs:
 
 ### Step 3: Fill Required Fields
 
-Fields marked with an asterisk (*) are required.
+Fields marked with an asterisk (*) are required. The form fields appear in a two-column layout once an environment is selected.
 
 #### Common Fields:
 
-- **Event Name***: Unique identifier for the event (e.g., EVENT1, EVENT2)
-- **Subscriber Name***: Name of the subscriber consuming the event
 - **Authorization Token***: Bearer token for API authentication
-  - Use "Generate Token" button to create a token using SAT service
-  - Or enter a custom token manually
+  - **Option 1 - Generate Token (SAT Service)**: 
+    - Click the "Generate Token" button (requires environment to be selected first)
+    - Enter your OAuth credentials in the modal:
+      - **Client ID**: Your OAuth client ID
+      - **Client Secret**: Your OAuth client secret
+      - **Scope**: Required OAuth scope (e.g., `onp.read onp.write`)
+    - Click "Generate Token" to create a token automatically
+    - The token will be populated in the Authorization field
+  - **Option 2 - Manual Token Entry**:
+    - Enter your Bearer token directly in the Authorization field
+    - **Note**: Do not include the word "Bearer" - it's added automatically
+  - **Note**: The "Generate Token" button is disabled if a token is already entered. Clear the token field to generate a new one.
+
+- **Event Name***: Unique identifier for the event (e.g., EVENT1, EVENT2)
+  - Required when "MongoDB and Redis" criteria is selected
+
+- **Subscriber Name***: Name of the subscriber consuming the event
+  - Required for: MongoDB and Redis, Kafka Topic, Deployment Manifest, Orion Properties, Concourse Vault
 
 #### MongoDB and Redis Specific:
 
@@ -193,43 +217,31 @@ Fields marked with an asterisk (*) are required.
 
 #### Fallback DB Specific:
 
-- **Downstream Details**: Similar to MongoDB, but includes:
-  - **HTTP Status Code**: Status code that triggers fallback (e.g., 500, 503)
+- **Downstream Details**: Add one or more downstream configurations (required)
+  - **Name***: Downstream system name (required)
+  - **HTTP Status Code***: Status code that triggers fallback (e.g., 500, 503) (required)
+  - **Maintenance Flag***: Boolean flag indicating maintenance mode (required)
+  - **Max Retry Count***: Maximum number of retry attempts (required)
+  - **Retry Delay***: Delay between retries in milliseconds (required)
 
-### Step 4: Authorization Token
-
-You have two options for authorization:
-
-1. **Generate Token (SAT Service)**:
-   - Click "Generate Token" button
-   - Enter:
-     - **Client ID**: Your OAuth client ID
-     - **Client Secret**: Your OAuth client secret
-     - **Scope**: Required OAuth scope
-   - Click "Generate" to create a token automatically
-   - Token will be populated in the Authorization field
-
-2. **Manual Token Entry**:
-   - Enter your Bearer token directly
-   - No need to include the word "Bearer" - it's added automatically
-
-### Step 5: Validation
+### Step 4: Validation
 
 The Validation Panel shows:
 - ✅ **Tasks that will execute** based on selected criteria
 - ❌ **Validation errors** with detailed messages
 - **Field-level errors** highlighted in red
 
-**Important**: The Submit button is disabled until all validations pass.
+**Important**: The Submit button is disabled until all validations pass and all required fields are filled.
 
-### Step 6: Submit Request
+### Step 5: Submit Request
 
-1. Review all fields and validation status
-2. Click "Submit Onboarding Request"
-3. The button will be disabled after submission
-4. To resubmit, edit any field to re-enable the button
+1. Review all fields and validation status in the Validation Panel
+2. Ensure all required fields are completed and validation shows "All validations passed"
+3. Click "Submit Onboarding Request" button
+4. The button will show "Submitting..." and be disabled during the request
+5. After submission, the button remains disabled until you edit any field to re-enable it
 
-### Step 7: View Results
+### Step 6: View Results
 
 After submission, the Task Results panel displays:
 

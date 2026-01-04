@@ -773,7 +773,7 @@ export const MongoDBDetails: React.FC<MongoDBDetailsProps> = ({ hideHeader = fal
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-blue-400 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-blue-400 to-blue-500 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {content}
       </div>
@@ -788,7 +788,60 @@ interface EventDetailCardProps {
   formatDate: (date?: string) => string;
 }
 
+// Helper function to parse schema definition XML and extract Header and Payload
+const parseSchemaDefinition = (schemaDefinition: string): { header?: string; payload?: string } | null => {
+  if (!schemaDefinition) return null;
+  
+  try {
+    // Try to extract HeaderAttributes JSON - match content between tags (non-greedy, handles whitespace)
+    const headerMatch = schemaDefinition.match(/<HeaderAttributes>([\s\S]*?)<\/HeaderAttributes>/);
+    // Try to extract Payload Schema JSON - match content between <Schema> tags within <Payload>
+    const payloadMatch = schemaDefinition.match(/<Payload>[\s\S]*?<Schema>([\s\S]*?)<\/Schema>[\s\S]*?<\/Payload>/);
+    
+    let headerJson: string | undefined;
+    let payloadJson: string | undefined;
+    
+    if (headerMatch && headerMatch[1]) {
+      try {
+        // Trim whitespace and parse the JSON to format it nicely
+        const trimmed = headerMatch[1].trim();
+        const parsed = JSON.parse(trimmed);
+        headerJson = JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        // If parsing fails, use the raw string (trimmed)
+        headerJson = headerMatch[1].trim();
+      }
+    }
+    
+    if (payloadMatch && payloadMatch[1]) {
+      try {
+        // Trim whitespace and parse the JSON to format it nicely
+        const trimmed = payloadMatch[1].trim();
+        const parsed = JSON.parse(trimmed);
+        payloadJson = JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        // If parsing fails, use the raw string (trimmed)
+        payloadJson = payloadMatch[1].trim();
+      }
+    }
+    
+    if (headerJson || payloadJson) {
+      return { header: headerJson, payload: payloadJson };
+    }
+  } catch (e) {
+    // If parsing fails, return null to show original
+    console.warn('Failed to parse schema definition:', e);
+  }
+  
+  return null;
+};
+
 const EventDetailCard: React.FC<EventDetailCardProps> = ({ eventDetail, isExpanded, onToggle, formatDate }) => {
+  // Parse schema definition if available
+  const parsedSchema = eventDetail.mongoDBData?.schemaDefinition 
+    ? parseSchemaDefinition(eventDetail.mongoDBData.schemaDefinition)
+    : null;
+  
   return (
     <div className="bg-white rounded-lg border-2 border-gray-200 shadow-lg overflow-hidden">
       <div
@@ -800,7 +853,7 @@ const EventDetailCard: React.FC<EventDetailCardProps> = ({ eventDetail, isExpand
             <h3 className="text-xl font-bold text-primary-700">{eventDetail.eventType || 'Unknown Event'}</h3>
             <p className="text-sm text-primary-600 mt-1">
               {eventDetail.mongoDBData ? 'MongoDB data available' : 'No MongoDB data'}
-              {eventDetail.redisData?.notificationSchema && ' • Redis data available'}
+              {(eventDetail.redisData?.notificationSchema || (eventDetail.redisData?.authorizations && eventDetail.redisData.authorizations.length > 0)) && ' • Redis data available'}
             </p>
           </div>
           <svg
@@ -834,24 +887,45 @@ const EventDetailCard: React.FC<EventDetailCardProps> = ({ eventDetail, isExpand
               
               {eventDetail.mongoDBData.schemaDefinition && (
                 <div className="mt-4">
-                  <label className="block text-sm font-semibold text-blue-700 mb-2">Schema Definition</label>
-                  <pre className="bg-white p-3 rounded border border-blue-200 text-xs overflow-x-auto max-h-64">
-                    {eventDetail.mongoDBData.schemaDefinition}
-                  </pre>
+                  <label className="block text-sm font-semibold text-blue-700 mb-3">Schema Definition</label>
+                  {parsedSchema ? (
+                    <div className="space-y-4">
+                      {parsedSchema.header && (
+                        <div>
+                          <label className="block text-xs font-semibold text-blue-600 mb-2 uppercase">Header Schema</label>
+                          <pre className="bg-white p-3 rounded border border-blue-200 text-xs overflow-x-auto max-h-64">
+                            {parsedSchema.header}
+                          </pre>
+                        </div>
+                      )}
+                      {parsedSchema.payload && (
+                        <div>
+                          <label className="block text-xs font-semibold text-blue-600 mb-2 uppercase">Payload Schema</label>
+                          <pre className="bg-white p-3 rounded border border-blue-200 text-xs overflow-x-auto max-h-64">
+                            {parsedSchema.payload}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <pre className="bg-white p-3 rounded border border-blue-200 text-xs overflow-x-auto max-h-64">
+                      {eventDetail.mongoDBData.schemaDefinition}
+                    </pre>
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          {/* Redis Data */}
-          {eventDetail.redisData && (
+          {/* Redis Data - Always show if MongoDB data exists (since backend always sets redisData) */}
+          {eventDetail.mongoDBData && (
             <div className="bg-red-50 rounded-lg p-4 border border-red-200">
               <h4 className="text-lg font-bold text-red-700 mb-4 flex items-center">
                 <span className="w-2 h-6 bg-red-500 rounded-full mr-2"></span>
                 Redis Cache Data
               </h4>
               
-              {eventDetail.redisData.notificationSchema && (
+              {eventDetail.redisData?.notificationSchema && (
                 <div className="mb-4">
                   <label className="block text-sm font-semibold text-red-700 mb-2">NotificationSchema (from Redis)</label>
                   <pre className="bg-white p-3 rounded border border-red-200 text-xs overflow-x-auto max-h-64">
@@ -860,7 +934,7 @@ const EventDetailCard: React.FC<EventDetailCardProps> = ({ eventDetail, isExpand
                 </div>
               )}
 
-              {eventDetail.redisData.authorizations && eventDetail.redisData.authorizations.length > 0 && (
+              {eventDetail.redisData?.authorizations && eventDetail.redisData.authorizations.length > 0 && (
                 <div>
                   <label className="block text-sm font-semibold text-red-700 mb-2">
                     Authorizations (from Redis) - {eventDetail.redisData.authorizations.length} found
@@ -873,8 +947,8 @@ const EventDetailCard: React.FC<EventDetailCardProps> = ({ eventDetail, isExpand
                 </div>
               )}
 
-              {!eventDetail.redisData.notificationSchema && 
-               (!eventDetail.redisData.authorizations || eventDetail.redisData.authorizations.length === 0) && (
+              {(!eventDetail.redisData?.notificationSchema && 
+               (!eventDetail.redisData?.authorizations || eventDetail.redisData.authorizations.length === 0)) && (
                 <p className="text-red-600 italic">No Redis data available for this event</p>
               )}
             </div>
@@ -898,9 +972,6 @@ const EventDetailCard: React.FC<EventDetailCardProps> = ({ eventDetail, isExpand
                       <DetailItem label="Downstream ID" value={detail.downstream?.downstreamId} />
                       <DetailItem label="Credentials ID" value={detail.downstream?.credentialsId} />
                       <DetailItem label="Endpoint" value={detail.downstream?.endpoint} />
-                      <DetailItem label="Authentication Type" value={detail.downstream?.authenticationType} />
-                      <DetailItem label="Created" value={formatDate(detail.downstream?.createdTimestamp)} />
-                      <DetailItem label="Updated" value={formatDate(detail.downstream?.updateTimestamp)} />
                     </div>
 
                     {detail.authorization && (
