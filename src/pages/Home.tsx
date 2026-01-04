@@ -72,12 +72,6 @@ export const Home: React.FC = () => {
     </svg>
   );
 
-  const UpdateIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
-  );
 
   const actionCards = [
     {
@@ -88,22 +82,15 @@ export const Home: React.FC = () => {
       onClick: () => navigate('/onboard'),
     },
     {
-      title: 'View MongoDB and Redis Details',
-      description: 'View events present in MongoDB and Redis cache with complete event information',
+      title: 'MongoDB and Redis Details',
+      description: 'View existing events, insert new events, or update event entries in MongoDB and refresh Redis cache',
       iconComponent: MongoDBIcon,
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       onClick: () => navigate('/mongodb'),
     },
     {
-      title: 'Update Event',
-      description: 'Update existing event entries in MongoDB and refresh Redis cache',
-      iconComponent: UpdateIcon,
-      gradient: 'linear-gradient(135deg, #166534 0%, #14532d 100%)',
-      onClick: () => navigate('/update'),
-    },
-    {
-      title: 'View Kafka Details',
-      description: 'View event configuration present in Kafka including topics, consumer groups, and related settings',
+      title: 'Kafka Details',
+      description: 'View existing Kafka topics and consumer groups, or create new Kafka topics with specified partitions and replication factor',
       iconComponent: KafkaIcon,
       gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
       onClick: () => navigate('/kafka'),
@@ -685,7 +672,6 @@ export const Home: React.FC = () => {
           }}>
             {actionCards.map((card, index) => {
               const isComingSoon = card.title === 'View Complete Event Information';
-              const isFeatured = index === 0; // First card is featured/larger
               
               return (
               <div
@@ -693,29 +679,37 @@ export const Home: React.FC = () => {
                 onClick={card.onClick}
                 style={{
                   backgroundColor: isComingSoon 
-                    ? 'rgba(255, 255, 255, 0.4)' 
-                    : 'rgba(255, 255, 255, 0.95)',
-                  backdropFilter: 'blur(20px) saturate(180%)',
-                  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                  borderRadius: '1.5rem',
+                    ? 'rgba(255, 255, 255, 0.6)' 
+                    : '#ffffff',
+                  backdropFilter: 'blur(10px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+                  borderRadius: '1.25rem',
                   boxShadow: isComingSoon 
-                    ? '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5)' 
-                    : '0 20px 60px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
-                  border: '1px solid rgba(255, 255, 255, 0.4)',
-                  padding: isFeatured ? '2rem' : '1.75rem',
+                    ? '0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05)' 
+                    : '0 4px 20px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08)',
+                  border: isComingSoon 
+                    ? '1px solid rgba(0, 0, 0, 0.08)' 
+                    : '1px solid rgba(0, 0, 0, 0.06)',
+                  padding: '1.75rem',
                   cursor: 'pointer',
-                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
                   overflow: 'hidden',
-                  opacity: isComingSoon ? 0.5 : 1,
-                  gridRow: isFeatured ? 'span 1' : 'span 1',
+                  opacity: isComingSoon ? 0.7 : 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: '240px',
                   animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
                 }}
                 onMouseEnter={(e) => {
                   if (!isComingSoon) {
-                    e.currentTarget.style.transform = 'translateY(-12px) scale(1.03)';
-                    e.currentTarget.style.boxShadow = '0 32px 80px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.7)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.12)';
+                    const overlay = e.currentTarget.querySelector('.card-gradient-overlay') as HTMLElement;
+                    if (overlay) {
+                      overlay.style.opacity = '0.03';
+                    }
                     const indicator = e.currentTarget.querySelector('.card-indicator') as HTMLElement;
                     if (indicator) {
                       indicator.style.opacity = '1';
@@ -725,11 +719,13 @@ export const Home: React.FC = () => {
                 }}
                 onMouseLeave={(e) => {
                   if (!isComingSoon) {
-                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                    e.currentTarget.style.boxShadow = isComingSoon 
-                      ? '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5)' 
-                      : '0 20px 60px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.06)';
+                    const overlay = e.currentTarget.querySelector('.card-gradient-overlay') as HTMLElement;
+                    if (overlay) {
+                      overlay.style.opacity = '0';
+                    }
                     const indicator = e.currentTarget.querySelector('.card-indicator') as HTMLElement;
                     if (indicator) {
                       indicator.style.opacity = '0';
@@ -738,74 +734,70 @@ export const Home: React.FC = () => {
                   }
                 }}
               >
-                {/* Animated Gradient Background Effect */}
-                <div style={{
-                  position: 'absolute',
-                  top: '-50%',
-                  left: '-50%',
-                  width: '200%',
-                  height: '200%',
-                  background: `radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)`,
-                  opacity: 0,
-                  transition: 'opacity 0.4s ease',
-                  pointerEvents: 'none'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isComingSoon) {
-                    e.currentTarget.style.opacity = '1';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = '0';
-                }}
-                ></div>
-                
-                {/* Gradient Accent Bar with Glow */}
+                {/* Subtle gradient overlay on hover */}
                 <div style={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: '5px',
+                  bottom: 0,
                   background: card.gradient,
-                  borderRadius: '1.5rem 1.5rem 0 0',
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease',
+                  pointerEvents: 'none',
+                  borderRadius: '1.25rem',
+                  zIndex: 0
+                }}
+                className="card-gradient-overlay"
+                ></div>
+                
+                {/* Top accent line */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '4px',
+                  background: card.gradient,
+                  borderRadius: '1.25rem 1.25rem 0 0',
                   opacity: isComingSoon ? 0.5 : 1,
-                  boxShadow: '0 0 20px rgba(59, 130, 246, 0.3)'
+                  zIndex: 1
                 }}></div>
                 
                 {/* Content Container */}
                 <div style={{ 
                   position: 'relative', 
-                  zIndex: 1,
+                  zIndex: 2,
                   display: 'flex', 
                   flexDirection: 'column',
-                  gap: '1.125rem'
+                  gap: '1rem',
+                  height: '100%'
                 }}>
-                  {/* Icon with Enhanced Styling */}
+                  {/* Icon Container */}
                   <div style={{ 
-                    width: isFeatured ? '56px' : '52px',
-                    height: isFeatured ? '56px' : '52px',
+                    width: '56px',
+                    height: '56px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     background: card.gradient,
-                    padding: '0.75rem',
-                    borderRadius: '1rem',
-                    boxShadow: '0 12px 24px -8px rgba(0, 0, 0, 0.3), 0 4px 12px -4px rgba(0, 0, 0, 0.2)',
-                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                    opacity: isComingSoon ? 0.5 : 1,
-                    alignSelf: 'flex-start'
+                    borderRadius: '0.875rem',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    opacity: isComingSoon ? 0.6 : 1,
+                    alignSelf: 'flex-start',
+                    flexShrink: 0
                   }}
                   onMouseEnter={(e) => {
                     if (!isComingSoon) {
-                      e.currentTarget.style.transform = 'rotate(8deg) scale(1.15)';
-                      e.currentTarget.style.boxShadow = '0 16px 32px -8px rgba(0, 0, 0, 0.4), 0 8px 16px -4px rgba(0, 0, 0, 0.3)';
+                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                      e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.2)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isComingSoon) {
-                      e.currentTarget.style.transform = 'rotate(0) scale(1)';
-                      e.currentTarget.style.boxShadow = '0 12px 24px -8px rgba(0, 0, 0, 0.3), 0 4px 12px -4px rgba(0, 0, 0, 0.2)';
+                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
                     }
                   }}
                   >
@@ -813,46 +805,56 @@ export const Home: React.FC = () => {
                   </div>
                   
                   {/* Text Content */}
-                  <div>
-                    <h3 style={{ 
-                      fontSize: isFeatured ? '1.25rem' : '1.125rem', 
-                      fontWeight: '700', 
-                      color: isComingSoon ? 'rgba(30, 64, 175, 0.6)' : '#1e40af', 
-                      marginBottom: '0.625rem',
-                      letterSpacing: '-0.01em',
-                      lineHeight: '1.3'
-                    }}>
-                      {card.title}
-                    </h3>
-                    <p style={{ 
-                      fontSize: isFeatured ? '0.9375rem' : '0.875rem', 
-                      color: isComingSoon ? 'rgba(107, 114, 128, 0.6)' : '#64748b', 
-                      lineHeight: '1.65',
-                      fontWeight: '400',
-                      margin: 0
-                    }}>
-                      {card.description}
-                    </p>
+                  <div style={{ 
+                    flexGrow: 1, 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    gap: '1rem'
+                  }}>
+                    {/* Title and Description */}
+                    <div>
+                      <h3 style={{ 
+                        fontSize: '1.125rem', 
+                        fontWeight: '600', 
+                        color: isComingSoon ? 'rgba(37, 99, 235, 0.5)' : '#2563eb', 
+                        margin: '0 0 0.625rem 0',
+                        letterSpacing: '0em',
+                        lineHeight: '1.4',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                      }}>
+                        {card.title}
+                      </h3>
+                      <p style={{ 
+                        fontSize: '0.875rem', 
+                        color: isComingSoon ? 'rgba(100, 116, 139, 0.6)' : '#64748b', 
+                        lineHeight: '1.6',
+                        fontWeight: '400',
+                        margin: 0
+                      }}>
+                        {card.description}
+                      </p>
+                    </div>
                   </div>
                   
-                  {/* Subtle Arrow Indicator */}
+                  {/* Action Indicator */}
                   {!isComingSoon && (
                     <div 
                       className="card-indicator"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        color: '#64748b',
-                        fontSize: '0.875rem',
+                        color: '#475569',
+                        fontSize: '0.8125rem',
                         fontWeight: '600',
-                        marginTop: 'auto',
-                        paddingTop: '0.5rem',
+                        marginTop: '0.75rem',
+                        paddingTop: '0.75rem',
+                        borderTop: '1px solid rgba(0, 0, 0, 0.06)',
                         opacity: 0,
                         transition: 'all 0.3s ease',
                         transform: 'translateX(-8px)'
                       }}
                     >
-                      <span>Explore</span>
+                      <span>Get started</span>
                       <svg style={{ width: '1rem', height: '1rem', marginLeft: '0.5rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
@@ -1166,11 +1168,10 @@ const UserGuideContent: React.FC = () => {
           <li>Introduction</li>
           <li>Getting Started</li>
           <li>Home Page</li>
-          <li>ONP Event Onboarding</li>
-          <li>View Event Details</li>
-          <li>Update Event</li>
-          <li>MongoDB Details</li>
-          <li>Kafka Details</li>
+          <li>New Event Onboarding</li>
+          <li>MongoDB and Redis Details (View, Insert, Update)</li>
+          <li>Kafka Details (View, Create)</li>
+          <li>View Complete Event Information</li>
           <li>Download Functionality</li>
           <li>Authentication & Authorization</li>
           <li>Troubleshooting</li>
@@ -1207,12 +1208,11 @@ const UserGuideContent: React.FC = () => {
           <li>Upon successful authentication, you'll be redirected to the Home page</li>
         </ol>
         <h3 style={subHeadingStyle}>Navigation</h3>
-        <p style={textStyle}>The platform consists of five main sections accessible from the Home page:</p>
+        <p style={textStyle}>The platform consists of four main sections accessible from the Home page:</p>
         <ul style={listStyle}>
-          <li><strong>New Event Onboarding</strong>: Create and configure new events</li>
-          <li><strong>View MongoDB and Redis Details</strong>: View events present in MongoDB and Redis cache</li>
-          <li><strong>View Kafka Details</strong>: View event configuration present in Kafka including topics and consumer groups</li>
-          <li><strong>Update Event</strong>: Update existing event entries in MongoDB and refresh Redis cache</li>
+          <li><strong>New Event Onboarding</strong>: Create and configure new events with multiple request criteria</li>
+          <li><strong>MongoDB and Redis Details</strong>: View existing events, insert new events, or update event entries in MongoDB and refresh Redis cache</li>
+          <li><strong>Kafka Details</strong>: View existing Kafka topics and consumer groups, or create new Kafka topics</li>
           <li><strong>View Complete Event Information</strong>: Browse and view all event configurations with detailed information</li>
         </ul>
       </div>
@@ -1234,12 +1234,11 @@ const UserGuideContent: React.FC = () => {
           the modal using the download button. Expand/collapse the section using "More" and "Less" buttons.
         </p>
         <h3 style={subHeadingStyle}>Platform Actions</h3>
-        <p style={textStyle}>Five action cards provide quick access to main features:</p>
+        <p style={textStyle}>Four action cards provide quick access to main features:</p>
         <ul style={listStyle}>
-          <li><strong>New Event Onboarding</strong> (Blue): Configure and onboard new events</li>
-          <li><strong>View MongoDB and Redis Details</strong> (Green): View events present in MongoDB and Redis cache</li>
-          <li><strong>View Kafka Details</strong> (Orange): View event configuration present in Kafka including topics and consumer groups</li>
-          <li><strong>Update Event</strong> (Dark Green): Update existing event entries in MongoDB and refresh Redis cache</li>
+          <li><strong>New Event Onboarding</strong> (Blue): Configure and onboard new events with multiple request criteria (MongoDB/Redis, Kafka Topic, Deployment Manifest, etc.)</li>
+          <li><strong>MongoDB and Redis Details</strong> (Green): Access three sub-options - View existing events, Insert new events, or Update existing event entries in MongoDB and refresh Redis cache</li>
+          <li><strong>Kafka Details</strong> (Orange): Access two sub-options - View existing Kafka topics and consumer groups, or Create new Kafka topics with specified configuration</li>
           <li><strong>View Complete Event Information</strong> (Purple): Browse and view all event configurations with detailed information</li>
         </ul>
       </div>
@@ -1251,39 +1250,49 @@ const UserGuideContent: React.FC = () => {
           The New Event Onboarding page allows you to configure and onboard new events to the platform.
         </p>
         <h3 style={subHeadingStyle}>Step 1: Select Environment</h3>
-        <p style={textStyle}>Choose an environment from the dropdown:</p>
+        <p style={textStyle}>Choose an environment from the dropdown. The environment selection appears first in a separate box. After selecting an environment, the remaining form fields will appear:</p>
         <ul style={listStyle}>
-          <li><strong>Development</strong>: DEV AS-G8, DEV HO-G2</li>
-          <li><strong>QA</strong>: QA AS-G8, QA HO-G2</li>
-          <li><strong>Integration</strong>: INT AS-G8, INT HO-G2</li>
+          <li><strong>Development</strong>: DEV</li>
+          <li><strong>QA</strong>: QA</li>
+          <li><strong>Integration</strong>: INT</li>
+          <li><strong>Flex</strong>: FLX</li>
+          <li><strong>Training</strong>: TRN</li>
           <li><strong>Staging</strong>: STG CH2-G2, STG HO-G4</li>
-          <li><strong>Production</strong>: PROD G1, PROD AS-G6, PROD HO-G1, PROD HO-G3</li>
+          <li><strong>Production</strong>: PROD</li>
+          <li><strong>Business</strong>: BUS</li>
         </ul>
-        <h3 style={subHeadingStyle}>Step 2: Configure Request Criteria</h3>
-        <p style={textStyle}>Select one or more request criteria based on your needs:</p>
-        <ul style={listStyle}>
-          <li><strong>MongoDB and Redis</strong>: Stores event data</li>
-          <li><strong>Kafka Topic</strong>: Creates Kafka topics for event messaging</li>
-          <li><strong>Deployment Manifest</strong>: Generates deployment manifest files</li>
-          <li><strong>Orion Properties</strong>: Creates Orion properties configuration</li>
-          <li><strong>Fallback DB</strong>: Configures fallback database settings</li>
-          <li><strong>Concourse Vault</strong>: Sets up Concourse Vault configuration</li>
-        </ul>
-        <h3 style={subHeadingStyle}>Step 3: Fill Required Fields</h3>
-        <p style={textStyle}>Fields marked with an asterisk (*) are required:</p>
-        <ul style={listStyle}>
-          <li><strong>Event Name*</strong>: Unique identifier for the event</li>
-          <li><strong>Subscriber Name*</strong>: Name of the subscriber consuming the event</li>
-          <li><strong>Authorization Token*</strong>: Bearer token for API authentication</li>
-          <li><strong>Header Schema*</strong>: JSON schema for event headers (if MongoDB selected)</li>
-          <li><strong>Payload Schema*</strong>: JSON schema for event payloads (if MongoDB selected)</li>
-        </ul>
-        <h3 style={subHeadingStyle}>Step 4: Authorization Token</h3>
-        <p style={textStyle}>You have two options:</p>
+        <p style={textStyle}><strong>Note:</strong> The simplified environment names (DEV, QA, INT, etc.) are displayed in the dropdown, but the system automatically maps them to the full backend environment names (e.g., DEV → DEV AS-G8).</p>
+        <h3 style={subHeadingStyle}>Step 2: Authorization Token</h3>
+        <p style={textStyle}>After selecting an environment, the Authorization Token section appears. You have two options:</p>
         <ol style={{ ...listStyle, listStyleType: 'decimal' }}>
-          <li><strong>Generate Token (SAT Service)</strong>: Use the "Generate Token" button</li>
-          <li><strong>Manual Token Entry</strong>: Enter your Bearer token directly (no need to include "Bearer")</li>
+          <li><strong>Generate Token (SAT Service)</strong>: Click the "Generate Token" button, enter Client ID, Client Secret, and Scope in the modal, then click "Generate Token"</li>
+          <li><strong>Manual Token Entry</strong>: Enter your Bearer token directly in the authorization field (no need to include "Bearer" prefix)</li>
         </ol>
+        <p style={textStyle}><strong>Note:</strong> The authorization token field is optional but recommended for secure access. The "Generate Token" button is only enabled when the token field is empty.</p>
+        
+        <h3 style={subHeadingStyle}>Step 3: Configure Request Criteria</h3>
+        <p style={textStyle}>Select one or more request criteria based on your needs. The form will dynamically show/hide fields based on your selection:</p>
+        <ul style={listStyle}>
+          <li><strong>MongoDB and Redis</strong>: Stores event data. Requires: Event Name, Header Schema, Payload Schema, Subscriber Name, and Downstream Details</li>
+          <li><strong>Kafka Topic</strong>: Creates Kafka topics for event messaging. Requires: Subscriber Name, Number of Partitions, and Replication Factor</li>
+          <li><strong>Deployment Manifest</strong>: Generates deployment manifest files. Requires: Subscriber Name, Commit Message, and Git Access Token</li>
+          <li><strong>Orion Properties</strong>: Creates Orion properties configuration. Requires: Subscriber Name, Commit Message, and Git Access Token</li>
+          <li><strong>Fallback DB</strong>: Configures fallback database settings. Requires: Downstream Details with HTTP Status Codes</li>
+          <li><strong>Concourse Vault</strong>: Sets up Concourse Vault configuration. Requires: Subscriber Name</li>
+        </ul>
+        <h3 style={subHeadingStyle}>Step 4: Fill Required Fields</h3>
+        <p style={textStyle}>Fields marked with an asterisk (*) are required. The form dynamically shows/hides fields based on selected request criteria:</p>
+        <ul style={listStyle}>
+          <li><strong>Event Name*</strong>: Unique identifier for the event (required for MongoDB and Redis)</li>
+          <li><strong>Subscriber Name*</strong>: Name of the subscriber consuming the event (required for most criteria)</li>
+          <li><strong>Header Schema*</strong>: JSON schema for event headers (required for MongoDB and Redis) - Use the JSON editor with syntax highlighting</li>
+          <li><strong>Payload Schema*</strong>: JSON schema for event payloads (required for MongoDB and Redis) - Use the JSON editor with syntax highlighting</li>
+          <li><strong>Number of Partitions*</strong>: Number of Kafka topic partitions (required for Kafka Topic, minimum 1)</li>
+          <li><strong>Replication Factor*</strong>: Kafka topic replication factor (required for Kafka Topic, minimum 1)</li>
+          <li><strong>Commit Message*</strong>: Git commit message (required for Deployment Manifest and Orion Properties)</li>
+          <li><strong>Git Access Token*</strong>: Git access token (required for Deployment Manifest and Orion Properties)</li>
+          <li><strong>Downstream Details</strong>: Add multiple downstream configurations with endpoints, credentials, and settings</li>
+        </ul>
         <h3 style={subHeadingStyle}>Step 5: Validation</h3>
         <p style={textStyle}>
           The Validation Panel shows tasks that will execute and any validation errors. 
@@ -1291,8 +1300,8 @@ const UserGuideContent: React.FC = () => {
         </p>
         <h3 style={subHeadingStyle}>Step 6: Submit Request</h3>
         <p style={textStyle}>
-          Review all fields and click "Submit Onboarding Request". The button will be disabled after submission. 
-          To resubmit, edit any field to re-enable the button.
+          Review all fields and validation status. Click "Submit Onboarding Request" when all validations pass. 
+          The button will be disabled after submission. To resubmit, edit any field to re-enable the button.
         </p>
         <h3 style={subHeadingStyle}>Step 7: View Results</h3>
         <p style={textStyle}>After submission, the Task Results panel displays:</p>
@@ -1306,95 +1315,149 @@ const UserGuideContent: React.FC = () => {
         </p>
       </div>
 
-      {/* Update Event */}
+      {/* MongoDB and Redis Details */}
       <div style={sectionStyle}>
-        <h2 style={headingStyle}>Update Event</h2>
+        <h2 style={headingStyle}>MongoDB and Redis Details</h2>
         <p style={textStyle}>
-          The Update Event page allows you to update existing event entries in MongoDB and refresh Redis cache.
+          The MongoDB and Redis Details page provides three sub-options for managing events in MongoDB and Redis cache.
         </p>
-        <h3 style={subHeadingStyle}>Environment Selection and Token Generation</h3>
+        <h3 style={subHeadingStyle}>Accessing Sub-Options</h3>
+        <p style={textStyle}>After clicking "MongoDB and Redis Details" on the home page, you'll see three option cards:</p>
+        <ul style={listStyle}>
+          <li><strong>View Existing Event</strong>: View events present in MongoDB and Redis cache with complete event information</li>
+          <li><strong>Update Existing Event</strong>: Update existing event entries in MongoDB and refresh Redis cache</li>
+          <li><strong>Insert New Event</strong>: Insert a new event into MongoDB and refresh Redis cache</li>
+        </ul>
+        <h3 style={subHeadingStyle}>Common Workflow: Environment Selection First</h3>
         <p style={textStyle}>
-          The page features a separate box at the top for environment selection and token generation.
+          All three sub-options follow the same workflow pattern:
         </p>
-        <ul style={listStyle}>
-          <li><strong>Environment Selection</strong>: Select the environment from the dropdown (same options as Event Onboarding). This is a required field.</li>
-          <li><strong>Authorization Token</strong>: Use "Generate Token" button to create a token using SAT service, or enter a custom Bearer token manually. This field is optional but recommended for secure access.</li>
-        </ul>
-        <h3 style={subHeadingStyle}>Step 1: Enter Event Details</h3>
-        <ul style={listStyle}>
-          <li><strong>Event Name*</strong>: Enter the name of an existing event that you want to update. The event must already exist in the selected environment. This is a required field.</li>
-          <li><strong>Subscriber Name</strong>: Optional - Enter subscriber name if you want to update subscriber-specific configurations.</li>
-        </ul>
-        <h3 style={subHeadingStyle}>Step 2: Configure Downstream Details</h3>
-        <p style={textStyle}>Add or modify downstream configurations:</p>
-        <ul style={listStyle}>
-          <li><strong>Name</strong>: Downstream system name</li>
-          <li><strong>Endpoint</strong>: API endpoint URL</li>
-          <li><strong>Client ID</strong>: OAuth client ID</li>
-          <li><strong>Client Secret</strong>: OAuth client secret</li>
-          <li><strong>Scope</strong>: OAuth scope</li>
-          <li><strong>Subscriber Name</strong>: Subscriber for this downstream</li>
-        </ul>
-        <h3 style={subHeadingStyle}>Step 3: Update Schemas (Optional)</h3>
-        <ul style={listStyle}>
-          <li><strong>Header Schema</strong>: Update the JSON schema for event headers using the JSON editor with syntax highlighting</li>
-          <li><strong>Payload Schema</strong>: Update the JSON schema for event payloads</li>
-        </ul>
-        <h3 style={subHeadingStyle}>Step 4: Submit Update</h3>
         <ol style={{ ...listStyle, listStyleType: 'decimal' }}>
-          <li>Review all fields and validation status</li>
-          <li>Click "Update Event" button</li>
-          <li>The button will be disabled after submission</li>
-          <li>To resubmit, edit any field to re-enable the button</li>
+          <li><strong>Step 1: Select Environment</strong>: Choose an environment from the dropdown (DEV, QA, INT, FLX, TRN, STG CH2-G2, STG HO-G4, PROD, BUS). This appears in a separate box at the top.</li>
+          <li><strong>Step 2: Authorization Token</strong>: After selecting an environment, the Authorization Token section appears. Use "Generate Token" button or enter a custom Bearer token manually.</li>
+          <li><strong>Step 3: Form Fields</strong>: After environment selection, the main form fields appear below.</li>
         </ol>
-        <h3 style={subHeadingStyle}>Step 5: View Results</h3>
-        <p style={textStyle}>After submission, the Task Results panel displays:</p>
-        <ul style={listStyle}>
-          <li><strong>Success</strong> (Green): Update completed successfully</li>
-          <li><strong>Failure</strong> (Red): Update failed with error message</li>
-          <li><strong>Partial</strong> (Yellow): Update completed with warnings</li>
-        </ul>
-        <h3 style={subHeadingStyle}>Accessing from MongoDB Details</h3>
+        <h3 style={subHeadingStyle}>Sub-Option 1: View Existing Event</h3>
         <p style={textStyle}>
-          You can also navigate to the Update Event page from the MongoDB Details page. After viewing MongoDB/Redis details, 
-          a subtle link appears in the Results Summary (for successful responses) or in the Error/Warning section (for error responses): 
-          "Go to Update Event page". Click the link to navigate directly. The link is available for both success and error responses.
+          View events present in MongoDB and Redis cache with complete event information, including schemas, downstream details, and authorization data.
+        </p>
+        <ol style={{ ...listStyle, listStyleType: 'decimal' }}>
+          <li>Select environment from the dropdown (appears first in a separate box)</li>
+          <li>After environment selection, the Authorization Token section appears - use "Generate Token" or enter manually</li>
+          <li>After token setup, the main form appears - specify events: Check "Fetch All Events" or enter specific event names separated by commas</li>
+          <li>Click "Fetch Details" or "Fetch All Events" to submit query</li>
+          <li>View results in expandable cards with detailed information including MongoDB data, Redis data, and downstream configurations</li>
+        </ol>
+        <p style={textStyle}>
+          Use the search box to filter events. Click "Download Excel" to export query results. Results show event details, schemas, downstream information, and authorization data.
+        </p>
+
+        <h3 style={subHeadingStyle}>Sub-Option 2: Update Existing Event</h3>
+        <p style={textStyle}>
+          Update existing event entries in MongoDB and refresh Redis cache. Modify schemas, downstream configurations, and authorization settings.
+        </p>
+        <ol style={{ ...listStyle, listStyleType: 'decimal' }}>
+          <li>Select environment from the dropdown (appears first in a separate box)</li>
+          <li>After environment selection, the Authorization Token section appears - use "Generate Token" or enter manually</li>
+          <li>After token setup, the main form appears - enter the name of an existing event that you want to update (required)</li>
+          <li>Optionally enter Subscriber Name for subscriber-specific updates</li>
+          <li>Configure or update Downstream Details (add, modify, or remove downstream configurations)</li>
+          <li>Update Header Schema and Payload Schema using the JSON editors (optional)</li>
+          <li>Review validation status and click "Update Event" button</li>
+          <li>View results in the Task Results panel</li>
+        </ol>
+        <p style={textStyle}>
+          <strong>Note:</strong> The event must already exist in the selected environment. You can modify schemas, downstream configurations, and other event properties.
+        </p>
+
+        <h3 style={subHeadingStyle}>Sub-Option 3: Insert New Event</h3>
+        <p style={textStyle}>
+          Insert a new event into MongoDB and refresh Redis cache. This allows you to add new events with complete configuration.
+        </p>
+        <ol style={{ ...listStyle, listStyleType: 'decimal' }}>
+          <li>Select environment from the dropdown (appears first in a separate box)</li>
+          <li>After environment selection, the Authorization Token section appears - use "Generate Token" or enter manually</li>
+          <li>After token setup, the main form appears - fill in all required fields:
+            <ul style={{ ...listStyle, marginTop: '0.5rem' }}>
+              <li>Event Name* (required)</li>
+              <li>Subscriber Name* (required)</li>
+              <li>Header Schema* (required, valid JSON)</li>
+              <li>Payload Schema* (required, valid JSON)</li>
+              <li>Downstream Details (optional but recommended)</li>
+            </ul>
+          </li>
+          <li>Review validation status and click "Insert Event" button</li>
+          <li>View results in the Task Results panel</li>
+        </ol>
+        <p style={textStyle}>
+          <strong>Note:</strong> This creates a new event in the selected environment. Ensure the event name is unique and all required fields are properly filled.
         </p>
       </div>
 
-      {/* View MongoDB and Redis Details */}
+      {/* Kafka Details */}
       <div style={sectionStyle}>
-        <h2 style={headingStyle}>View MongoDB and Redis Details</h2>
+        <h2 style={headingStyle}>Kafka Details</h2>
         <p style={textStyle}>
-          The View MongoDB and Redis Details page allows you to view events present in MongoDB and Redis cache with complete event information.
+          The Kafka Details page provides two sub-options for managing Kafka topics and consumer groups.
+        </p>
+        <h3 style={subHeadingStyle}>Accessing Sub-Options</h3>
+        <p style={textStyle}>After clicking "Kafka Details" on the home page, you'll see two option cards:</p>
+        <ul style={listStyle}>
+          <li><strong>View Kafka Details</strong>: View existing Kafka topics, consumer groups, partition information, and related settings</li>
+          <li><strong>Create New Kafka Topic</strong>: Create new Kafka topics with specified partitions and replication factor</li>
+        </ul>
+        <h3 style={subHeadingStyle}>Common Workflow: Environment Selection First</h3>
+        <p style={textStyle}>
+          Both sub-options follow the same workflow pattern:
         </p>
         <ol style={{ ...listStyle, listStyleType: 'decimal' }}>
-          <li>Select environment from the dropdown</li>
-          <li>Provide authorization token (use "Generate Token" or enter manually)</li>
-          <li>Specify events: Check "Fetch All Events" or enter specific event names separated by commas</li>
-          <li>Click "Fetch Details" to submit query</li>
-          <li>View results in expandable cards with detailed information</li>
+          <li><strong>Step 1: Select Environment</strong>: Choose an environment from the dropdown (DEV, QA, INT, FLX, TRN, STG CH2-G2, STG HO-G4, PROD, BUS). This appears in a separate box at the top.</li>
+          <li><strong>Step 2: Authorization Token</strong>: After selecting an environment, the Authorization Token section appears. Use "Generate Token" button or enter a custom Bearer token manually.</li>
+          <li><strong>Step 3: Form Fields</strong>: After environment selection, the main form fields appear below.</li>
         </ol>
-        <p style={textStyle}>
-          Use the search box to filter events. Click "Download Excel" to export query results.
-        </p>
-      </div>
 
-      {/* View Kafka Details */}
-      <div style={sectionStyle}>
-        <h2 style={headingStyle}>View Kafka Details</h2>
+        <h3 style={subHeadingStyle}>Sub-Option 1: View Kafka Details</h3>
         <p style={textStyle}>
-          The View Kafka Details page allows you to view event configuration present in Kafka including topics, consumer groups, and related settings.
+          View event configuration present in Kafka including topics, consumer groups, partition information, and related settings.
         </p>
         <ol style={{ ...listStyle, listStyleType: 'decimal' }}>
-          <li>Select environment from the dropdown</li>
-          <li>Provide authorization token</li>
-          <li>Enter Kafka topic names separated by commas</li>
+          <li>Select environment from the dropdown (appears first in a separate box)</li>
+          <li>After environment selection, the Authorization Token section appears - use "Generate Token" or enter manually</li>
+          <li>After token setup, the main form appears - enter Kafka topic names separated by commas</li>
           <li>Click "Fetch Details" to submit query</li>
-          <li>View results in expandable cards showing partition information, replication factor, and consumer group details</li>
+          <li>View results in expandable cards showing:
+            <ul style={{ ...listStyle, marginTop: '0.5rem' }}>
+              <li>Topic name and health status</li>
+              <li>Partition information and replication factor</li>
+              <li>Consumer group details</li>
+              <li>Topic configuration settings</li>
+            </ul>
+          </li>
         </ol>
         <p style={textStyle}>
-          Use the search box to filter topics. Click "Download Excel" to export query results.
+          Use the search box to filter topics. Click "Download Excel" to export query results. Results show comprehensive Kafka topic information including partitions, replication, consumer groups, and configuration.
+        </p>
+
+        <h3 style={subHeadingStyle}>Sub-Option 2: Create New Kafka Topic</h3>
+        <p style={textStyle}>
+          Create new Kafka topics with specified partitions and replication factor. This uses the ONP onboard API with kafkatopic request criteria.
+        </p>
+        <ol style={{ ...listStyle, listStyleType: 'decimal' }}>
+          <li>Select environment from the dropdown (appears first in a separate box)</li>
+          <li>After environment selection, the Authorization Token section appears - use "Generate Token" or enter manually</li>
+          <li>After token setup, the main form appears - fill in required fields:
+            <ul style={{ ...listStyle, marginTop: '0.5rem' }}>
+              <li>Subscriber Name* (required)</li>
+              <li>Number of Partitions* (required, minimum 1)</li>
+              <li>Replication Factor* (required, minimum 1)</li>
+            </ul>
+          </li>
+          <li>Review validation status in the Validation Panel</li>
+          <li>Click "Create Kafka Topic" button</li>
+          <li>View results in the Task Results panel showing success, failure, or partial status</li>
+        </ol>
+        <p style={textStyle}>
+          <strong>Note:</strong> Event Name is not required for Kafka topic creation. Only Subscriber Name, Number of Partitions, and Replication Factor are required. The system will create the Kafka topic in the selected environment.
         </p>
       </div>
 

@@ -275,7 +275,7 @@ export const OnboardForm: React.FC = () => {
 
   // Single Page - Environment selection first, then show form fields
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-400 via-primary-300 to-primary-400 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-blue-400 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <button
@@ -308,7 +308,7 @@ export const OnboardForm: React.FC = () => {
 
         {/* Environment Selection Section - Show first */}
         <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
-          <h2 className="text-xl font-semibold text-primary-700 mb-6 flex items-center">
+          <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
             <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
             Select Environment
           </h2>
@@ -352,7 +352,7 @@ export const OnboardForm: React.FC = () => {
             {/* Left Column - Form */}
             <div className="space-y-6">
               <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
-                <h2 className="text-xl font-semibold text-primary-700 mb-6 flex items-center">
+                <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
                   <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
                   Request Configuration
                 </h2>
@@ -621,7 +621,7 @@ export const OnboardForm: React.FC = () => {
             {/* JSON Editors */}
             {request.requestCriteria?.includes('mongodbandredis') && (
               <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
-                <h2 className="text-xl font-semibold text-primary-700 mb-6 flex items-center">
+                <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
                   <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
                   Schema Configuration
                 </h2>

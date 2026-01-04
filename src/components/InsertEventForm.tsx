@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import type { OnboardRequest, TaskResult, Environment } from '../types';
 import { validateRequest } from '../services/validation';
-import { updateOnp } from '../services/api';
+import { onboardOnp } from '../services/api';
+import { generateSatToken } from '../services/sat';
 import { JsonEditor } from './JsonEditor';
 import { DownstreamEditor } from './DownstreamEditor';
 import { ValidationPanel } from './ValidationPanel';
 import { TaskResults } from './TaskResults';
-import { generateSatToken } from '../services/sat';
 
 const ENVIRONMENT_OPTIONS: Environment[] = [
   'DEV AS-G8',
@@ -31,16 +31,15 @@ const ENVIRONMENT_OPTIONS: Environment[] = [
   'BUS HO-G2',
 ];
 
-interface UpdateEventFormProps {
+interface InsertEventFormProps {
   hideHeader?: boolean;
 }
 
-export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = false }) => {
+export const InsertEventForm: React.FC<InsertEventFormProps> = ({ hideHeader = false }) => {
   const navigate = useNavigate();
   const [environment, setEnvironment] = useState<Environment | ''>('');
-  const [authorization, setAuthorization] = useState<string>('');
   const [request, setRequest] = useState<OnboardRequest>({
-    requestCriteria: ['mongodbandredis'], // Default to MongoDB and Redis for updates
+    requestCriteria: ['mongodbandredis'], // Pre-select MongoDB and Redis
     downstreamDetails: [],
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -82,7 +81,7 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
   } | null>(null);
 
   const mutation = useMutation({
-    mutationFn: updateOnp,
+    mutationFn: onboardOnp,
     onSuccess: (data) => {
       const tasks = data.tasks || [];
       setTaskResults(tasks);
@@ -97,17 +96,17 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
       if (failureCount === 0 && partialCount === 0) {
         setOperationStatus({
           type: 'success',
-          message: `Update completed successfully! All ${tasks.length} task(s) completed successfully in ${environment} environment.`,
+          message: `Event inserted successfully! All ${tasks.length} task(s) completed successfully in ${environment} environment.`,
         });
       } else if (failureCount > 0) {
         setOperationStatus({
           type: 'error',
-          message: `Update completed with errors. ${failureCount} task(s) failed, ${successCount} succeeded in ${environment} environment. Please review the details below.`,
+          message: `Insertion completed with errors. ${failureCount} task(s) failed, ${successCount} succeeded in ${environment} environment. Please review the details below.`,
         });
       } else if (partialCount > 0) {
         setOperationStatus({
           type: 'warning',
-          message: `Update completed with partial success. ${partialCount} task(s) completed partially, ${successCount} succeeded in ${environment} environment. Please review the details below.`,
+          message: `Insertion completed with partial success. ${partialCount} task(s) completed partially, ${successCount} succeeded in ${environment} environment. Please review the details below.`,
         });
       }
     },
@@ -137,7 +136,7 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
       }
       
       const errorResult = {
-        task: 'Update Error',
+        task: 'Insertion Error',
         status: 'Failure' as const,
         message: errorMessage,
       };
@@ -152,7 +151,7 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
       
       setOperationStatus({
         type: 'error',
-        message: `Update failed: ${errorMessage}. Please check your request and try again.`,
+        message: `Insertion failed: ${errorMessage}. Please check your request and try again.`,
         statusCode: statusCode,
       });
     },
@@ -179,7 +178,7 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
         scope: tokenCredentials.scope,
       });
 
-      setAuthorization(token);
+      updateRequest({ authorization: token });
       setShowTokenModal(false);
       setTokenCredentials({ clientId: '', clientSecret: '', scope: '' });
     } catch (error) {
@@ -201,10 +200,10 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
       return;
     }
 
-    const requestWithEnvironment = {
+    const requestWithEnvironment: OnboardRequest = {
       ...request,
       environment: environment as Environment,
-      authorization: authorization || request.authorization,
+      requestCriteria: ['mongodbandredis'], // Ensure mongodbandredis is always selected
     };
 
     setLastRequestData(requestWithEnvironment);
@@ -214,14 +213,12 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
   };
 
   const errors = validateRequest(request);
-  const hasCriteria = (request.requestCriteria?.length || 0) > 0;
-  const isValid = hasCriteria && errors.length === 0 && !!environment;
-  const requireHttpStatusCode = request.requestCriteria?.includes('fallbackdb') || false;
+  const isValid = request.requestCriteria?.includes('mongodbandredis') && errors.length === 0 && !!environment;
 
   const content = (
     <>
       {!hideHeader && (
-        <div className="mb-8">
+        <div className="mb-6">
           <button
             onClick={() => navigate('/')}
             className="mb-4 flex items-center text-white hover:text-primary-100 transition-colors"
@@ -231,124 +228,111 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
             </svg>
             Back to Home
           </button>
-          <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 rounded-xl shadow-2xl p-6 mb-4 border-2 border-primary-600">
-            <h1 className="text-2xl font-bold text-white mb-2 drop-shadow-lg">Update Event</h1>
+          <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 rounded-xl shadow-2xl p-6 border-2 border-primary-600">
+            <h1 className="text-2xl font-bold text-white mb-2 drop-shadow-lg">Insert New Event</h1>
             <p className="text-white text-lg font-medium">
-              Update existing event entries in MongoDB and refresh Redis cache
+              Create a new event in MongoDB and Redis cache with complete event configuration
             </p>
           </div>
         </div>
       )}
 
-        {/* Environment Selection Box - Show first */}
-        <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
-          <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-            <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-            Select Environment
-          </h2>
-          <div>
-            <label htmlFor="environment" className="block text-sm font-semibold text-primary-700 mb-3">
-              Environment *
-            </label>
-            <select
-              id="environment"
-              value={environment}
-              onChange={(e) => {
-                setEnvironment(e.target.value as Environment);
-                if (hasSubmitted) setFormHasChanged(true);
-              }}
-              className="w-full px-4 py-3 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900 text-sm font-medium transition-all"
-              disabled={mutation.isPending}
-              required
-            >
-              <option value="">-- Select Environment --</option>
-              {ENVIRONMENT_OPTIONS.map((env) => (
-                <option key={env} value={env}>
-                  {env}
-                </option>
-              ))}
-            </select>
-            {validationErrors.environment && (
-              <p className="mt-1 text-sm text-red-600 font-medium">
-                {validationErrors.environment}
-              </p>
-            )}
-          </div>
+      {/* Environment Selection Section */}
+      <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
+        <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
+          <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
+          Select Environment
+        </h2>
+        
+        <div className="mb-6">
+          <label htmlFor="environment" className="block text-sm font-semibold text-primary-700 mb-3">
+            Environment *
+          </label>
+          <select
+            id="environment"
+            value={environment}
+            onChange={(e) => {
+              setEnvironment(e.target.value as Environment);
+              if (e.target.value) {
+                setRequest((prev) => ({ ...prev, environment: e.target.value as Environment }));
+              }
+              if (hasSubmitted) setFormHasChanged(true);
+            }}
+            className="w-full px-4 py-3 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900 text-sm font-medium transition-all"
+            disabled={mutation.isPending}
+            required
+          >
+            <option value="">-- Select Environment --</option>
+            {ENVIRONMENT_OPTIONS.map((env) => (
+              <option key={env} value={env}>
+                {env}
+              </option>
+            ))}
+          </select>
+          {validationErrors.environment && (
+            <p className="mt-1 text-sm text-red-600 font-medium">
+              {validationErrors.environment}
+            </p>
+          )}
         </div>
+      </div>
 
-        {/* Authorization Token Box - Show after environment is selected */}
-        {environment && (
-          <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
-            <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-              <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-              Authorization Token
-            </h2>
-            <div>
-              <label htmlFor="authorization" className="block text-sm font-medium text-gray-700 mb-2">
-                Authorization Token
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="authorization"
-                  type="password"
-                  value={authorization || request.authorization || ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setAuthorization(value);
-                    updateRequest({ authorization: value });
-                    if (hasSubmitted) setFormHasChanged(true);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Enter authorization token or generate one"
-                  disabled={mutation.isPending}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthorization(''); // Clear manual token when opening Generate Token modal
-                    updateRequest({ authorization: '' });
-                    setShowTokenModal(true);
-                  }}
-                  disabled={!environment || mutation.isPending || !!((authorization && authorization.trim().length > 0) || (request.authorization && request.authorization.trim().length > 0))}
-                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                    !!(environment && !mutation.isPending && !authorization?.trim() && !request.authorization?.trim())
-                      ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                  title={!environment ? 'Please select an environment first' : ((authorization && authorization.trim()) || (request.authorization && request.authorization.trim())) ? 'Clear the token field to generate a new token' : 'Generate token'}
-                >
-                  Generate Token
-                </button>
-              </div>
-              <p className="mt-1 text-sm text-gray-500">
-                Optional: Generate a token using SAT service or enter a custom token
-              </p>
-              {validationErrors.authorization && (
-                <p className="mt-1 text-sm text-red-600 font-medium">
-                  {validationErrors.authorization}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Form Fields - Show after environment is selected */}
-        {environment && (
-        <form onSubmit={handleSubmit}>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Form Fields - Show only when environment is selected */}
+      {environment ? (
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Form */}
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
               <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
                 <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-                Update Configuration
+                Event Configuration
               </h2>
+
+              {/* Authorization Token */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-primary-700 mb-2">
+                  Authorization Token *
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={request.authorization || ''}
+                    onChange={(e) => updateRequest({ authorization: e.target.value })}
+                    className={`flex-1 px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all bg-white text-gray-900 placeholder-gray-400 ${
+                      validationErrors.authorization 
+                        ? 'border-red-500 focus:ring-red-300 focus:border-red-500' 
+                        : 'border-primary-400 focus:ring-primary-300 focus:border-primary-500'
+                    }`}
+                    placeholder="Enter authorization token or generate one"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateRequest({ authorization: '' });
+                      setShowTokenModal(true);
+                    }}
+                    disabled={!environment || !!(request.authorization && request.authorization.trim().length > 0)}
+                    className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                      !!(environment && (!request.authorization || !request.authorization.trim()))
+                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    title={!environment ? 'Please select an environment first' : (request.authorization && request.authorization.trim()) ? 'Clear the token field to generate a new token' : 'Generate token'}
+                  >
+                    Generate Token
+                  </button>
+                </div>
+                {validationErrors.authorization && (
+                  <p className="mt-1 text-sm text-red-600 font-medium">
+                    {validationErrors.authorization}
+                  </p>
+                )}
+              </div>
 
               {/* Event Name */}
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-primary-700 mb-2">
-                  Event Name * <span className="text-xs text-gray-500 font-normal">(must exist)</span>
+                  Event Name *
                 </label>
                 <input
                   type="text"
@@ -359,7 +343,7 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
                       ? 'border-red-500 focus:ring-red-300 focus:border-red-500' 
                       : 'border-primary-400 focus:ring-primary-300 focus:border-primary-500'
                   }`}
-                  placeholder="Enter existing event name to update"
+                  placeholder="Enter event name"
                 />
                 {validationErrors.eventName && (
                   <p className="mt-1 text-sm text-red-600 font-medium">
@@ -371,7 +355,7 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
               {/* Subscriber Name */}
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-primary-700 mb-2">
-                  Subscriber Name
+                  Subscriber Name *
                 </label>
                 <input
                   type="text"
@@ -382,7 +366,7 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
                       ? 'border-red-500 focus:ring-red-300 focus:border-red-500' 
                       : 'border-primary-400 focus:ring-primary-300 focus:border-primary-500'
                   }`}
-                  placeholder="Enter subscriber name (optional)"
+                  placeholder="Enter subscriber name"
                 />
                 {validationErrors.subscriberName && (
                   <p className="mt-1 text-sm text-red-600 font-medium">
@@ -396,7 +380,7 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
                 downstreamDetails={request.downstreamDetails || []}
                 onChange={(details) => updateRequest({ downstreamDetails: details })}
                 errors={validationErrors}
-                requireHttpStatusCode={requireHttpStatusCode}
+                requireHttpStatusCode={false}
                 showClientAndEndpoint={true}
               />
             </div>
@@ -437,9 +421,9 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
             <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
               <button
                 type="submit"
-                disabled={!isValid || !environment || mutation.isPending || (hasSubmitted && !formHasChanged)}
+                disabled={!isValid || mutation.isPending || (hasSubmitted && !formHasChanged)}
                 className={`w-full px-6 py-4 rounded-lg font-semibold text-lg transition-all transform ${
-                  isValid && environment && !mutation.isPending && (!hasSubmitted || formHasChanged)
+                  isValid && !mutation.isPending && (!hasSubmitted || formHasChanged)
                     ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
@@ -450,10 +434,10 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Updating...
+                    Inserting...
                   </span>
                 ) : (
-                  'Update Event'
+                  'Insert New Event'
                 )}
               </button>
             </div>
@@ -516,6 +500,7 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
                     )}
                   </div>
                   <button
+                    type="button"
                     onClick={() => setOperationStatus(null)}
                     className="ml-4 text-gray-400 hover:text-gray-600 transition-colors"
                     title="Dismiss"
@@ -534,149 +519,159 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
                 isLoading={mutation.isPending}
                 requestData={lastRequestData}
                 responseData={lastResponseData}
-                operationName="Update Event"
+                operationName="Insert New Event"
               />
             )}
           </div>
-          </div>
         </form>
-        )}
+      ) : (
+        <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8">
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🎯</div>
+            <h2 className="text-2xl font-bold text-primary-700 mb-4">Select Environment First</h2>
+            <p className="text-gray-600 mb-6">
+              Please select an environment above to insert a new event into MongoDB and Redis.
+            </p>
+          </div>
+        </div>
+      )}
 
-        {/* Token Generation Modal */}
-        {showTokenModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 max-w-md w-full p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-primary-700">
-                  Generate Authorization Token
-                </h2>
+      {/* Token Generation Modal */}
+      {showTokenModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-primary-700">
+                Generate Authorization Token
+              </h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTokenModal(false);
+                  setTokenError(null);
+                  setTokenCredentials({ clientId: '', clientSecret: '', scope: '' });
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-primary-700 mb-2">
+                  Environment
+                </label>
+                <div className="px-4 py-2 bg-primary-50 border-2 border-primary-300 rounded-lg">
+                  <p className="text-sm font-medium text-primary-800">{environment}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-primary-700 mb-2">
+                  Client ID *
+                </label>
+                <input
+                  type="text"
+                  value={tokenCredentials.clientId}
+                  onChange={(e) =>
+                    setTokenCredentials({ ...tokenCredentials, clientId: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900"
+                  placeholder="Enter client ID"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-primary-700 mb-2">
+                  Client Secret *
+                </label>
+                <input
+                  type="password"
+                  value={tokenCredentials.clientSecret}
+                  onChange={(e) =>
+                    setTokenCredentials({ ...tokenCredentials, clientSecret: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900"
+                  placeholder="Enter client secret"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-primary-700 mb-2">
+                  Scope *
+                </label>
+                <input
+                  type="text"
+                  value={tokenCredentials.scope}
+                  onChange={(e) =>
+                    setTokenCredentials({ ...tokenCredentials, scope: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900"
+                  placeholder="Enter scope"
+                />
+              </div>
+
+              {tokenError && (
+                <div className="bg-red-50 border-l-4 border-red-400 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 text-red-400 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-red-800 mb-1">Token Generation Error</p>
+                      <p className="text-sm text-red-700">{tokenError}</p>
+                      {environment && (
+                        <p className="text-xs text-red-600 mt-2">
+                          Environment: <span className="font-semibold">{environment}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
                 <button
+                  type="button"
                   onClick={() => {
                     setShowTokenModal(false);
                     setTokenError(null);
                     setTokenCredentials({ clientId: '', clientSecret: '', scope: '' });
                   }}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="flex-1 px-4 py-2.5 border-2 border-primary-400 text-primary-700 rounded-lg font-semibold hover:bg-primary-50 transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  Cancel
                 </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-primary-700 mb-2">
-                    Environment
-                  </label>
-                  <div className="px-4 py-2 bg-primary-50 border-2 border-primary-300 rounded-lg">
-                    <p className="text-sm font-medium text-primary-800">{environment}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-primary-700 mb-2">
-                    Client ID *
-                  </label>
-                  <input
-                    type="text"
-                    value={tokenCredentials.clientId}
-                    onChange={(e) =>
-                      setTokenCredentials({ ...tokenCredentials, clientId: e.target.value })
-                    }
-                    className="w-full px-4 py-2.5 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900"
-                    placeholder="Enter client ID"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-primary-700 mb-2">
-                    Client Secret *
-                  </label>
-                  <input
-                    type="password"
-                    value={tokenCredentials.clientSecret}
-                    onChange={(e) =>
-                      setTokenCredentials({ ...tokenCredentials, clientSecret: e.target.value })
-                    }
-                    className="w-full px-4 py-2.5 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900"
-                    placeholder="Enter client secret"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-primary-700 mb-2">
-                    Scope *
-                  </label>
-                  <input
-                    type="text"
-                    value={tokenCredentials.scope}
-                    onChange={(e) =>
-                      setTokenCredentials({ ...tokenCredentials, scope: e.target.value })
-                    }
-                    className="w-full px-4 py-2.5 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900"
-                    placeholder="Enter scope"
-                  />
-                </div>
-
-                {tokenError && (
-                  <div className="bg-red-50 border-l-4 border-red-400 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <svg className="w-5 h-5 text-red-400 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <button
+                  type="button"
+                  onClick={handleGenerateToken}
+                  disabled={isGeneratingToken}
+                  className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-white transition-all ${
+                    isGeneratingToken
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
+                  }`}
+                >
+                  {isGeneratingToken ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-red-800 mb-1">Token Generation Error</p>
-                        <p className="text-sm text-red-700">{tokenError}</p>
-                        {environment && (
-                          <p className="text-xs text-red-600 mt-2">
-                            Environment: <span className="font-semibold">{environment}</span>
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowTokenModal(false);
-                      setTokenError(null);
-                      setTokenCredentials({ clientId: '', clientSecret: '', scope: '' });
-                    }}
-                    className="flex-1 px-4 py-2.5 border-2 border-primary-400 text-primary-700 rounded-lg font-semibold hover:bg-primary-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleGenerateToken}
-                    disabled={isGeneratingToken}
-                    className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-white transition-all ${
-                      isGeneratingToken
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
-                    }`}
-                  >
-                    {isGeneratingToken ? (
-                      <span className="flex items-center justify-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Generating...
-                      </span>
-                    ) : (
-                      'Generate Token'
-                    )}
-                  </button>
-                </div>
+                      Generating...
+                    </span>
+                  ) : (
+                    'Generate Token'
+                  )}
+                </button>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
     </>
   );
 
@@ -685,7 +680,7 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-blue-400 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-400 via-primary-300 to-primary-400 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {content}
       </div>

@@ -36,7 +36,11 @@ const getBackendEnvironment = (displayName: string): Environment | undefined => 
   return ENVIRONMENT_MAPPING[displayName];
 };
 
-export const KafkaDetails: React.FC = () => {
+interface KafkaDetailsProps {
+  hideHeader?: boolean;
+}
+
+export const KafkaDetails: React.FC<KafkaDetailsProps> = ({ hideHeader = false }) => {
   const navigate = useNavigate();
   const [environment, setEnvironment] = useState<string>(''); // Store simplified display name
   const [topicNamesInput, setTopicNamesInput] = useState('');
@@ -366,9 +370,9 @@ export const KafkaDetails: React.FC = () => {
     topic.topicName?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-400 via-primary-300 to-primary-400 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  const content = (
+    <>
+      {!hideHeader && (
         <div className="mb-6">
           <button
             onClick={() => navigate('/')}
@@ -386,36 +390,46 @@ export const KafkaDetails: React.FC = () => {
             </p>
           </div>
         </div>
+      )}
 
-        {/* Environment Selection and Token Generation Box */}
+        {/* Environment Selection Box - Show first */}
         <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
-          <div className="space-y-4">
-            {/* Environment Selection */}
-            <div>
-              <label htmlFor="environment" className="block text-sm font-medium text-gray-700 mb-2">
-                Environment *
-              </label>
-              <select
-                id="environment"
-                value={environment}
-                onChange={(e) => {
-                  setEnvironment(e.target.value);
-                  if (hasSubmitted) setFormHasChanged(true);
-                }}
-                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                disabled={loading}
-                required
-              >
-                <option value="">-- Select Environment --</option>
-                {ENVIRONMENT_DISPLAY_OPTIONS.map((env) => (
-                  <option key={env} value={env}>
-                    {env}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
+            <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
+            Select Environment
+          </h2>
+          <div>
+            <label htmlFor="environment" className="block text-sm font-semibold text-primary-700 mb-3">
+              Environment *
+            </label>
+            <select
+              id="environment"
+              value={environment}
+              onChange={(e) => {
+                setEnvironment(e.target.value);
+                if (hasSubmitted) setFormHasChanged(true);
+              }}
+              className="w-full px-4 py-3 border-2 border-primary-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500 bg-white text-gray-900 text-sm font-medium transition-all"
+              disabled={loading}
+              required
+            >
+              <option value="">-- Select Environment --</option>
+              {ENVIRONMENT_DISPLAY_OPTIONS.map((env) => (
+                <option key={env} value={env}>
+                  {env}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-            {/* Authorization Token */}
+        {/* Authorization Token Box - Show after environment is selected */}
+        {environment && (
+          <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
+            <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
+              <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
+              Authorization Token
+            </h2>
             <div>
               <label htmlFor="authorization" className="block text-sm font-medium text-gray-700 mb-2">
                 Authorization Token
@@ -455,8 +469,10 @@ export const KafkaDetails: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
+        )}
 
+        {/* Form Fields - Show after environment is selected */}
+        {environment && (
         <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8">
           <form onSubmit={handleSubmit} className="mb-8">
             <div className="space-y-4">
@@ -519,8 +535,10 @@ export const KafkaDetails: React.FC = () => {
               </button>
             </div>
           </form>
+        </div>
+        )}
 
-          {error && (
+        {error && (
             <div className={`mb-6 p-5 rounded-lg border-l-4 ${
               error.toLowerCase().includes('warning') 
                 ? 'bg-yellow-50 border-yellow-400' 
@@ -589,7 +607,7 @@ export const KafkaDetails: React.FC = () => {
             </div>
           )}
 
-          {kafkaDetails && kafkaDetails.topicDetails && kafkaDetails.topicDetails.length > 0 && (
+        {kafkaDetails && kafkaDetails.topicDetails && kafkaDetails.topicDetails.length > 0 && (
             <div className="space-y-6">
               {/* Summary Stats */}
               <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg p-6 border border-primary-200">
@@ -698,7 +716,7 @@ export const KafkaDetails: React.FC = () => {
             </div>
           )}
 
-          {kafkaDetails && kafkaDetails.topicDetails && kafkaDetails.topicDetails.length === 0 && (
+        {kafkaDetails && kafkaDetails.topicDetails && kafkaDetails.topicDetails.length === 0 && (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📭</div>
               <h2 className="text-2xl font-bold text-primary-700 mb-4">No Data Found</h2>
@@ -840,7 +858,17 @@ export const KafkaDetails: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
+    </>
+  );
+
+  if (hideHeader) {
+    return content;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-blue-400 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {content}
       </div>
     </div>
   );

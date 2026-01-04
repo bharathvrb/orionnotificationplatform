@@ -15,11 +15,11 @@ const UpdateEventForm = React.lazy(() =>
 const ViewEvents = React.lazy(() => 
   import('./pages/ViewEvents').then(module => ({ default: module.ViewEvents }))
 );
-const MongoDBDetails = React.lazy(() => 
-  import('./pages/MongoDBDetails').then(module => ({ default: module.MongoDBDetails }))
+const MongoDBAndRedisDetails = React.lazy(() => 
+  import('./pages/MongoDBAndRedisDetails').then(module => ({ default: module.MongoDBAndRedisDetails }))
 );
-const KafkaDetails = React.lazy(() => 
-  import('./pages/KafkaDetails').then(module => ({ default: module.KafkaDetails }))
+const KafkaAndTopicDetails = React.lazy(() => 
+  import('./pages/KafkaAndTopicDetails').then(module => ({ default: module.KafkaAndTopicDetails }))
 );
 const UserGuide = React.lazy(() => 
   import('./pages/UserGuide').then(module => ({ default: module.UserGuide }))
@@ -48,8 +48,8 @@ function App() {
             <Route path="/update" element={<ProtectedRoute><UpdateEventForm /></ProtectedRoute>} />
             <Route path="/updateonp" element={<ProtectedRoute><UpdateEventForm /></ProtectedRoute>} />
             <Route path="/events" element={<ProtectedRoute><ViewEvents /></ProtectedRoute>} />
-            <Route path="/mongodb" element={<ProtectedRoute><MongoDBDetails /></ProtectedRoute>} />
-            <Route path="/kafka" element={<ProtectedRoute><KafkaDetails /></ProtectedRoute>} />
+            <Route path="/mongodb" element={<ProtectedRoute><MongoDBAndRedisDetails /></ProtectedRoute>} />
+            <Route path="/kafka" element={<ProtectedRoute><KafkaAndTopicDetails /></ProtectedRoute>} />
             <Route path="/guide" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
           </Routes>
         </React.Suspense>
