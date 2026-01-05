@@ -815,19 +815,17 @@ export const Home: React.FC = () => {
                     <div>
                       <h3 style={{ 
                         fontSize: '1.125rem', 
-                        fontWeight: '600', 
-                        color: isComingSoon ? 'rgba(37, 99, 235, 0.5)' : '#2563eb', 
+                        fontWeight: '700', 
+                        color: isComingSoon ? 'rgba(30, 64, 175, 0.5)' : '#1e40af', 
                         margin: '0 0 0.625rem 0',
-                        letterSpacing: '0em',
-                        lineHeight: '1.4',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                        letterSpacing: '-0.01em'
                       }}>
                         {card.title}
                       </h3>
                       <p style={{ 
-                        fontSize: '0.875rem', 
-                        color: isComingSoon ? 'rgba(100, 116, 139, 0.6)' : '#64748b', 
-                        lineHeight: '1.6',
+                        fontSize: '0.9375rem', 
+                        color: isComingSoon ? 'rgba(75, 85, 99, 0.6)' : '#4b5563', 
+                        lineHeight: '1.7',
                         fontWeight: '400',
                         margin: 0
                       }}>

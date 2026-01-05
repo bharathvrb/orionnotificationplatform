@@ -371,10 +371,17 @@ export const fetchKafkaDetails = async (
       console.warn('No authorization token provided for Kafka details - backend may reject the request');
     }
 
-    // Prepare request config with Content-Type and headers
+    // Determine timeout based on request type
+    // Fetch ALL topics can take significantly longer, so use extended timeout
+    const isFetchAll = request.topicNames && request.topicNames.length === 1 && 
+                       request.topicNames[0] === 'ALL';
+    const timeoutMs = isFetchAll ? 300000 : 120000; // 5 minutes for ALL, 2 minutes for specific topics
+
+    // Prepare request config with Content-Type, headers, and timeout
     // withCredentials is required for CORS with credentials (Authorization header)
     const requestConfig: any = {
       withCredentials: true, // Required for CORS with credentials
+      timeout: timeoutMs, // Add timeout to prevent hanging requests
       headers: {
         'Content-Type': 'application/json',
         ...headers  // Authorization from headers or will be added by interceptor
@@ -383,7 +390,7 @@ export const fetchKafkaDetails = async (
 
     // Log for debugging
     if (headers.Authorization) {
-      console.log('Sending Kafka details request with Authorization header (manual/SAT token)');
+      console.log(`Sending Kafka details request with Authorization header (manual/SAT token) - Timeout: ${timeoutMs}ms (${isFetchAll ? 'ALL topics' : 'specific topics'})`);
     } else {
       console.warn('No Authorization header in Kafka details request - token must be provided manually or via SAT');
     }
@@ -401,6 +408,23 @@ export const fetchKafkaDetails = async (
       const status = axiosError.response?.status;
       const responseData = axiosError.response?.data;
       const errorMessage = axiosError.message;
+
+      // Handle timeout errors (check before network errors)
+      if (axiosError.code === 'ECONNABORTED' || errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+        const isFetchAll = request.topicNames && request.topicNames.length === 1 && 
+                          request.topicNames[0] === 'ALL';
+        let timeoutErrorMessage = 'Request timeout: ';
+        if (isFetchAll) {
+          timeoutErrorMessage += 'Fetching all Kafka topics is taking longer than expected (5 minutes). ';
+          timeoutErrorMessage += 'This may indicate a backend performance issue or a large number of topics. ';
+          timeoutErrorMessage += 'Please try: 1) Checking if the Kafka server is responding, 2) Fetching specific topics instead, or 3) Contacting support if the issue persists.';
+        } else {
+          timeoutErrorMessage += 'The request took longer than expected (2 minutes). ';
+          timeoutErrorMessage += 'This may indicate a backend performance issue or network connectivity problem. ';
+          timeoutErrorMessage += 'Please try again or contact support if the issue persists.';
+        }
+        throw new Error(timeoutErrorMessage);
+      }
 
       // Handle network errors (CORS, connection issues, etc.)
       if (!status && (axiosError.code === 'ERR_NETWORK' || errorMessage.includes('Network Error'))) {
@@ -511,7 +535,7 @@ export const fetchMongoDBDetails = async (
       const token = authorization.trim();
       headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
     } else {
-      console.warn('No authorization token provided for Kafka details - backend may reject the request');
+      console.warn('No authorization token provided for MongoDB details - backend may reject the request');
     }
 
     // Log for debugging
