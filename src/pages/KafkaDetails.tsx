@@ -747,6 +747,7 @@ export const KafkaDetails: React.FC<KafkaDetailsProps> = ({ hideHeader = false }
                     Generate Authorization Token
                   </h2>
                   <button
+                    type="button"
                     onClick={() => {
                       setShowTokenModal(false);
                       setTokenError(null);

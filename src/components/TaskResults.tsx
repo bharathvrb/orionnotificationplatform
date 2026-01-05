@@ -291,6 +291,7 @@ export const TaskResults: React.FC<TaskResultsProps> = ({
               </div>
               {result.rawData && (
                 <button
+                  type="button"
                   onClick={() => toggleExpand(result.task)}
                   className="px-4 py-2 text-xs font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-all shadow-sm hover:shadow border border-primary-400"
                 >

@@ -508,6 +508,7 @@ export const MongoDBDetails: React.FC<MongoDBDetailsProps> = ({ hideHeader = fal
                     }`}>
                       Need to update an event?{' '}
                       <button
+                        type="button"
                         onClick={() => navigate('/update')}
                         className={`${
                           error.toLowerCase().includes('warning') 
@@ -654,6 +655,7 @@ export const MongoDBDetails: React.FC<MongoDBDetailsProps> = ({ hideHeader = fal
                     Generate Authorization Token
                   </h2>
                   <button
+                    type="button"
                     onClick={() => {
                       setShowTokenModal(false);
                       setTokenError(null);

@@ -551,6 +551,7 @@ export const KafkaTopicForm: React.FC<KafkaTopicFormProps> = ({ hideHeader = fal
                 Generate Authorization Token
               </h2>
               <button
+                type="button"
                 onClick={() => {
                   setShowTokenModal(false);
                   setTokenError(null);
