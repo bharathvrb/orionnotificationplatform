@@ -7,6 +7,7 @@ import { onboardOnp } from '../services/api';
 import { generateSatToken } from '../services/sat';
 import { ValidationPanel } from './ValidationPanel';
 import { TaskResults } from './TaskResults';
+import { ProductionWarning } from './ProductionWarning';
 
 // Simplified display names for dropdown
 const ENVIRONMENT_DISPLAY_OPTIONS = [
@@ -295,6 +296,7 @@ export const KafkaTopicForm: React.FC<KafkaTopicFormProps> = ({ hideHeader = fal
               {validationErrors.environment}
             </p>
           )}
+          <ProductionWarning environment={environment} />
         </div>
       </div>
 

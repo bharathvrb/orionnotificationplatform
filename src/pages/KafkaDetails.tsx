@@ -4,6 +4,7 @@ import { fetchKafkaDetails } from '../services/api';
 import { generateSatToken } from '../services/sat';
 import { downloadAsExcel, type DownloadData } from '../services/download';
 import type { KafkaDetailsResponse, KafkaDetailsListResponse, Environment } from '../types';
+import { ProductionWarning } from '../components/ProductionWarning';
 
 // Simplified display names for dropdown
 const ENVIRONMENT_DISPLAY_OPTIONS = [
@@ -420,6 +421,7 @@ export const KafkaDetails: React.FC<KafkaDetailsProps> = ({ hideHeader = false }
                 </option>
               ))}
             </select>
+            <ProductionWarning environment={environment} />
           </div>
         </div>
 

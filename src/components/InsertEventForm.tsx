@@ -9,6 +9,7 @@ import { JsonEditor } from './JsonEditor';
 import { DownstreamEditor } from './DownstreamEditor';
 import { ValidationPanel } from './ValidationPanel';
 import { TaskResults } from './TaskResults';
+import { ProductionWarning } from './ProductionWarning';
 
 const ENVIRONMENT_OPTIONS: Environment[] = [
   'DEV AS-G8',
@@ -274,6 +275,7 @@ export const InsertEventForm: React.FC<InsertEventFormProps> = ({ hideHeader = f
               {validationErrors.environment}
             </p>
           )}
+          <ProductionWarning environment={environment} />
         </div>
       </div>
 

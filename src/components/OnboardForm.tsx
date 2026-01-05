@@ -10,6 +10,7 @@ import { JsonEditor } from './JsonEditor';
 import { DownstreamEditor } from './DownstreamEditor';
 import { ValidationPanel } from './ValidationPanel';
 import { TaskResults } from './TaskResults';
+import { ProductionWarning } from './ProductionWarning';
 
 const CRITERIA_OPTIONS: { value: RequestCriteria; label: string }[] = [
   { value: 'mongodbandredis', label: 'MongoDB and Redis' },
@@ -343,6 +344,7 @@ export const OnboardForm: React.FC = () => {
                 {validationErrors.environment}
               </p>
             )}
+            <ProductionWarning environment={environment} />
           </div>
         </div>
 

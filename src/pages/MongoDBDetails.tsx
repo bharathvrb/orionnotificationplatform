@@ -4,6 +4,7 @@ import { fetchMongoDBDetails } from '../services/api';
 import { generateSatToken } from '../services/sat';
 import { downloadAsExcel, type DownloadData } from '../services/download';
 import type { MongoDBDetailsResponse, EventDetail, Environment } from '../types';
+import { ProductionWarning } from '../components/ProductionWarning';
 
 const ENVIRONMENT_OPTIONS: Environment[] = [
   'DEV AS-G8',
@@ -343,6 +344,7 @@ export const MongoDBDetails: React.FC<MongoDBDetailsProps> = ({ hideHeader = fal
                 </option>
               ))}
             </select>
+            <ProductionWarning environment={environment} />
           </div>
         </div>
 
