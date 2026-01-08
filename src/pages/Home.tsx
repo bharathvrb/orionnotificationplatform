@@ -397,6 +397,136 @@ export const Home: React.FC = () => {
 
           {showAbout && (
             <>
+              {/* Platform Flow Overview Section */}
+              <div style={{
+                marginTop: '1.5rem',
+                backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                borderRadius: '0.75rem',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+                padding: '1.25rem',
+                marginBottom: '1.5rem'
+              }}>
+                <h3 style={{
+                  fontSize: '1.125rem',
+                  fontWeight: '700',
+                  color: '#1e40af',
+                  marginBottom: '1rem'
+                }}>
+                  Platform Flow Overview
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1.25rem'
+                }}>
+                  {/* OMW Layer */}
+                  <div>
+                    <h4 style={{
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      color: '#1e3a8a',
+                      marginBottom: '0.5rem'
+                    }}>OMW (Orion Middleware) Layer</h4>
+                    <ul style={{
+                      marginLeft: '1.25rem',
+                      color: '#4b5563',
+                      lineHeight: '1.8',
+                      fontSize: '0.9rem'
+                    }}>
+                      <li>Receives events from <strong>Upstream</strong> systems with eventName and request data</li>
+                      <li>Forwards processed events to <strong>Downstream</strong> systems</li>
+                      <li>Acts as the middleware layer between upstream sources and downstream destinations</li>
+                    </ul>
+                  </div>
+
+                  {/* ONP-Service Flow */}
+                  <div>
+                    <h4 style={{
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      color: '#1e3a8a',
+                      marginBottom: '0.5rem'
+                    }}>ONP-Service Processing Flow</h4>
+                    <ol style={{
+                      marginLeft: '1.25rem',
+                      color: '#4b5563',
+                      lineHeight: '1.8',
+                      fontSize: '0.9rem',
+                      listStyleType: 'decimal'
+                    }}>
+                      <li><strong>Schema Retrieval:</strong> Fetches Notification Schema from Redis cache</li>
+                      <li><strong>Cache Check:</strong> Verifies if schema is present in Redis
+                        <ul style={{ marginTop: '0.25rem', marginLeft: '1rem', listStyleType: 'disc' }}>
+                          <li>If <strong>Yes:</strong> Proceeds directly to validation</li>
+                          <li>If <strong>No:</strong> Fetches schema from MongoDB and refreshes Redis cache</li>
+                        </ul>
+                      </li>
+                      <li><strong>Input Validation:</strong> Validates the incoming request against the schema
+                        <ul style={{ marginTop: '0.25rem', marginLeft: '1rem', listStyleType: 'disc' }}>
+                          <li>If <strong>Valid:</strong> Proceeds to push to Kafka Topic</li>
+                          <li>If <strong>Invalid:</strong> Returns error to the requester</li>
+                        </ul>
+                      </li>
+                      <li><strong>Message Publishing:</strong> Successfully validated events are pushed to Kafka Topic for asynchronous processing</li>
+                    </ol>
+                  </div>
+
+                  {/* ONPSubscriber Flow */}
+                  <div>
+                    <h4 style={{
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      color: '#1e3a8a',
+                      marginBottom: '0.5rem'
+                    }}>ONPSubscriber Processing Flow</h4>
+                    <ol style={{
+                      marginLeft: '1.25rem',
+                      color: '#4b5563',
+                      lineHeight: '1.8',
+                      fontSize: '0.9rem',
+                      listStyleType: 'decimal'
+                    }}>
+                      <li><strong>Schema Retrieval:</strong> Fetches Notification/Authorization Schema from Redis cache</li>
+                      <li><strong>Cache Check:</strong> Verifies if schema is present in Redis
+                        <ul style={{ marginTop: '0.25rem', marginLeft: '1rem', listStyleType: 'disc' }}>
+                          <li>If <strong>Yes:</strong> Proceeds directly to downstream routing</li>
+                          <li>If <strong>No:</strong> Fetches schema from MongoDB and refreshes Redis cache</li>
+                        </ul>
+                      </li>
+                      <li><strong>Downstream Delivery:</strong> Sends processed events to Downstream systems</li>
+                      <li><strong>Error Handling:</strong> If errors occur from Downstream systems, events are routed to <strong>Fallback DB</strong> for reliable message persistence and retry capability</li>
+                    </ol>
+                  </div>
+
+                  {/* Key Components */}
+                  <div style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                    borderRadius: '0.5rem',
+                    padding: '0.75rem',
+                    border: '1px solid rgba(59, 130, 246, 0.15)'
+                  }}>
+                    <h4 style={{
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      color: '#1e3a8a',
+                      marginBottom: '0.5rem'
+                    }}>Key Components</h4>
+                    <ul style={{
+                      marginLeft: '1.25rem',
+                      color: '#4b5563',
+                      lineHeight: '1.8',
+                      fontSize: '0.9rem',
+                      margin: 0
+                    }}>
+                      <li><strong>Redis:</strong> High-speed cache for schema storage and retrieval</li>
+                      <li><strong>MongoDB:</strong> Persistent storage for notification and authorization schemas</li>
+                      <li><strong>Kafka Topic:</strong> Message queue for asynchronous event processing</li>
+                      <li><strong>Fallback DB:</strong> Reliable storage for events that fail downstream delivery</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               <div style={{
                 marginTop: '1rem',
                 display: 'flex',
