@@ -1700,7 +1700,7 @@ const UserGuideContent: React.FC = () => {
               color: '#9ca3af',
               fontSize: '0.75rem'
             }}>
-              Platform Developer
+              Platform Administrator and Developer
             </p>
           </div>
         </div>
