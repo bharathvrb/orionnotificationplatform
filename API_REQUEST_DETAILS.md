@@ -341,7 +341,7 @@ All API requests (except SAT Token API) include the following common headers:
   - `DEV AS-G8`, `DEV HO-G2`
   - `QA AS-G8`, `QA HO-G2`
   - `INT AS-G8`, `INT HO-G2`
-  - `FLX AS-G8`, `FLA HO-G2`
+  - `FLX AS-G8`, `FLX HO-G2`
   - `TRN AS-G8`, `TRN HO-G2`
   - `STG CH2-G2`, `STG HO-G4`
   - `PROD G1`, `PROD AS-G6`, `PROD HO-G1`, `PROD HO-G3`

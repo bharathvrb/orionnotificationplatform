@@ -29,7 +29,7 @@ const ENVIRONMENT_OPTIONS: Environment[] = [
   'INT AS-G8',
   'INT HO-G2',
   'FLX AS-G8',
-  'FLA HO-G2',
+  'FLX HO-G2',
   'TRN AS-G8',
   'TRN HO-G2',
   'STG CH2-G2',

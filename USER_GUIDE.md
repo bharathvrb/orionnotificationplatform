@@ -104,7 +104,7 @@ The ONP Event Onboarding page allows you to configure and onboard new events to 
    - **Development**: DEV AS-G8, DEV HO-G2
    - **QA**: QA AS-G8, QA HO-G2
    - **Integration**: INT AS-G8, INT HO-G2
-   - **Flex**: FLX AS-G8, FLA HO-G2
+   - **Flex**: FLX AS-G8, FLX HO-G2
    - **Training**: TRN AS-G8, TRN HO-G2
    - **Staging**: STG CH2-G2, STG HO-G4
    - **Production**: PROD G1, PROD AS-G6, PROD HO-G1, PROD HO-G3

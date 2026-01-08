@@ -1387,7 +1387,7 @@ const UserGuideContent: React.FC = () => {
           <li>INT AS-G8</li>
           <li>INT HO-G2</li>
           <li>FLX AS-G8</li>
-          <li>FLA HO-G2</li>
+          <li>FLX HO-G2</li>
           <li>TRN AS-G8</li>
           <li>TRN HO-G2</li>
           <li>STG CH2-G2</li>

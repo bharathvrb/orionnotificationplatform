@@ -34,7 +34,7 @@ export const getSatEndpoint = (environment: Environment): string => {
   }
   
   // Default to CI endpoint for: QA AS-G8, QA HO-G2, DEV AS-G8, DEV HO-G2, INT, FLX, TRN, BUS
-  // This includes: INT AS-G8, INT HO-G2, FLX AS-G8, FLA HO-G2, TRN AS-G8, TRN HO-G2, BUS AS-G8, BUS HO-G2
+  // This includes: INT AS-G8, INT HO-G2, FLX AS-G8, FLX HO-G2, TRN AS-G8, TRN HO-G2, BUS AS-G8, BUS HO-G2
   return 'https://sat-ci.codebig2.net/v2/ws/token.oauth2';
 };
 

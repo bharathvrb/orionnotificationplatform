@@ -14,7 +14,7 @@ const ENVIRONMENT_OPTIONS: Environment[] = [
   'INT AS-G8',
   'INT HO-G2',
   'FLX AS-G8',
-  'FLA HO-G2',
+  'FLX HO-G2',
   'TRN AS-G8',
   'TRN HO-G2',
   'STG CH2-G2',
@@ -921,43 +921,6 @@ const EventDetailCard: React.FC<EventDetailCardProps> = ({ eventDetail, isExpand
             </div>
           )}
 
-          {/* Redis Data - Always show if MongoDB data exists (since backend always sets redisData) */}
-          {eventDetail.mongoDBData && (
-            <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-              <h4 className="text-lg font-bold text-red-700 mb-4 flex items-center">
-                <span className="w-2 h-6 bg-red-500 rounded-full mr-2"></span>
-                Redis Cache Data
-              </h4>
-              
-              {eventDetail.redisData?.notificationSchema && (
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold text-red-700 mb-2">NotificationSchema (from Redis)</label>
-                  <pre className="bg-white p-3 rounded border border-red-200 text-xs overflow-x-auto max-h-64">
-                    {eventDetail.redisData.notificationSchema}
-                  </pre>
-                </div>
-              )}
-
-              {eventDetail.redisData?.authorizations && eventDetail.redisData.authorizations.length > 0 && (
-                <div>
-                  <label className="block text-sm font-semibold text-red-700 mb-2">
-                    Authorizations (from Redis) - {eventDetail.redisData.authorizations.length} found
-                  </label>
-                  {eventDetail.redisData.authorizations.map((auth, idx) => (
-                    <pre key={idx} className="bg-white p-3 rounded border border-red-200 text-xs overflow-x-auto max-h-48 mb-2">
-                      {auth}
-                    </pre>
-                  ))}
-                </div>
-              )}
-
-              {(!eventDetail.redisData?.notificationSchema && 
-               (!eventDetail.redisData?.authorizations || eventDetail.redisData.authorizations.length === 0)) && (
-                <p className="text-red-600 italic">No Redis data available for this event</p>
-              )}
-            </div>
-          )}
-
           {/* Downstream Details with Authorization */}
           {eventDetail.downstreamDetails && eventDetail.downstreamDetails.length > 0 && (
             <div className="bg-green-50 rounded-lg p-4 border border-green-200">
@@ -1006,6 +969,43 @@ const EventDetailCard: React.FC<EventDetailCardProps> = ({ eventDetail, isExpand
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Redis Data - Always show if MongoDB data exists (since backend always sets redisData) */}
+          {eventDetail.mongoDBData && (
+            <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+              <h4 className="text-lg font-bold text-red-700 mb-4 flex items-center">
+                <span className="w-2 h-6 bg-red-500 rounded-full mr-2"></span>
+                Redis Cache Data
+              </h4>
+              
+              {eventDetail.redisData?.notificationSchema && (
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-red-700 mb-2">NotificationSchema (from Redis)</label>
+                  <pre className="bg-white p-3 rounded border border-red-200 text-xs overflow-x-auto max-h-64">
+                    {eventDetail.redisData.notificationSchema}
+                  </pre>
+                </div>
+              )}
+
+              {eventDetail.redisData?.authorizations && eventDetail.redisData.authorizations.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold text-red-700 mb-2">
+                    Authorizations (from Redis) - {eventDetail.redisData.authorizations.length} found
+                  </label>
+                  {eventDetail.redisData.authorizations.map((auth, idx) => (
+                    <pre key={idx} className="bg-white p-3 rounded border border-red-200 text-xs overflow-x-auto max-h-48 mb-2">
+                      {auth}
+                    </pre>
+                  ))}
+                </div>
+              )}
+
+              {(!eventDetail.redisData?.notificationSchema && 
+               (!eventDetail.redisData?.authorizations || eventDetail.redisData.authorizations.length === 0)) && (
+                <p className="text-red-600 italic">No Redis data available for this event</p>
+              )}
             </div>
           )}
 
