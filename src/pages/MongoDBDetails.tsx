@@ -793,6 +793,7 @@ interface EventDetailCardProps {
 }
 
 // Helper function to parse schema definition XML and extract Header and Payload
+// Handles escaped JSON strings (double-escaped) from MongoDB/Redis
 const parseSchemaDefinition = (schemaDefinition: string): { header?: string; payload?: string } | null => {
   if (!schemaDefinition) return null;
   
@@ -805,28 +806,69 @@ const parseSchemaDefinition = (schemaDefinition: string): { header?: string; pay
     let headerJson: string | undefined;
     let payloadJson: string | undefined;
     
-    if (headerMatch && headerMatch[1]) {
+    // Helper function to unescape and parse JSON (handles both escaped and non-escaped JSON)
+    // This function handles schemas stored in MongoDB/Redis which are double-escaped JSON strings
+    const unescapeAndParseJson = (jsonString: string): string => {
+      const trimmed = jsonString.trim();
+      if (!trimmed) return trimmed;
+      
       try {
-        // Trim whitespace and parse the JSON to format it nicely
-        const trimmed = headerMatch[1].trim();
-        const parsed = JSON.parse(trimmed);
-        headerJson = JSON.stringify(parsed, null, 2);
+        // First parse - might give us a string if it's escaped, or an object if it's not
+        let parsed: any = JSON.parse(trimmed);
+        
+        // If the result is a string, it was escaped, so parse again to get the actual JSON object
+        if (typeof parsed === 'string') {
+          try {
+            // Second parse to get the actual JSON object
+            parsed = JSON.parse(parsed);
+          } catch (e) {
+            // If second parse fails, the string might have extra escaping or be malformed
+            // Try to clean up common escaping issues and parse again
+            const cleaned = parsed
+              .replace(/\\"/g, '"')  // Replace escaped quotes
+              .replace(/\\\\/g, '\\') // Replace double backslashes
+              .replace(/\\n/g, '\n') // Replace escaped newlines
+              .replace(/\\t/g, '\t'); // Replace escaped tabs
+            try {
+              parsed = JSON.parse(cleaned);
+            } catch (e2) {
+              // If still fails after cleaning, return the cleaned string as-is (might be invalid JSON)
+              console.warn('Failed to parse JSON after cleaning:', e2);
+              return cleaned;
+            }
+          }
+        }
+        
+        // Format the parsed JSON nicely with proper indentation
+        return JSON.stringify(parsed, null, 2);
       } catch (e) {
-        // If parsing fails, use the raw string (trimmed)
-        headerJson = headerMatch[1].trim();
+        // If initial parsing fails, the string might not be valid JSON or might need cleaning
+        // Try to clean up common escaping issues
+        const cleaned = trimmed
+          .replace(/\\"/g, '"')  // Replace escaped quotes
+          .replace(/\\\\/g, '\\') // Replace double backslashes
+          .replace(/\\n/g, '\n') // Replace escaped newlines
+          .replace(/\\t/g, '\t'); // Replace escaped tabs
+        
+        try {
+          // Try parsing the cleaned string
+          const parsed = JSON.parse(cleaned);
+          return JSON.stringify(parsed, null, 2);
+        } catch (e2) {
+          // If still fails, return the cleaned string as-is
+          // This handles edge cases where the JSON might be malformed
+          console.warn('Failed to parse JSON even after cleaning:', e2);
+          return cleaned;
+        }
       }
+    };
+    
+    if (headerMatch && headerMatch[1]) {
+      headerJson = unescapeAndParseJson(headerMatch[1]);
     }
     
     if (payloadMatch && payloadMatch[1]) {
-      try {
-        // Trim whitespace and parse the JSON to format it nicely
-        const trimmed = payloadMatch[1].trim();
-        const parsed = JSON.parse(trimmed);
-        payloadJson = JSON.stringify(parsed, null, 2);
-      } catch (e) {
-        // If parsing fails, use the raw string (trimmed)
-        payloadJson = payloadMatch[1].trim();
-      }
+      payloadJson = unescapeAndParseJson(payloadMatch[1]);
     }
     
     if (headerJson || payloadJson) {
@@ -980,14 +1022,64 @@ const EventDetailCard: React.FC<EventDetailCardProps> = ({ eventDetail, isExpand
                 Redis Cache Data
               </h4>
               
-              {eventDetail.redisData?.notificationSchema && (
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold text-red-700 mb-2">NotificationSchema (from Redis)</label>
-                  <pre className="bg-white p-3 rounded border border-red-200 text-xs overflow-x-auto max-h-64">
-                    {eventDetail.redisData.notificationSchema}
-                  </pre>
-                </div>
-              )}
+              {eventDetail.redisData?.notificationSchema && (() => {
+                // Redis stores NotificationSchema as JSON object string
+                // Parse it to extract schemaDefinition and unescape it
+                let redisSchemaDisplay: string = eventDetail.redisData.notificationSchema;
+                let redisParsedSchema: { header?: string; payload?: string } | null = null;
+                
+                try {
+                  // Try to parse Redis JSON to extract schemaDefinition
+                  const redisJson = JSON.parse(eventDetail.redisData.notificationSchema);
+                  if (redisJson && redisJson.schemaDefinition) {
+                    // Extract and unescape schemaDefinition from Redis JSON
+                    redisParsedSchema = parseSchemaDefinition(redisJson.schemaDefinition);
+                    if (redisParsedSchema) {
+                      // Format the parsed schema for display
+                      redisSchemaDisplay = JSON.stringify(redisJson, null, 2);
+                    }
+                  }
+                } catch (e) {
+                  // If parsing fails, display raw string
+                  console.warn('Failed to parse Redis notificationSchema JSON:', e);
+                }
+                
+                return (
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold text-red-700 mb-2">NotificationSchema (from Redis)</label>
+                    {redisParsedSchema ? (
+                      <div className="space-y-4">
+                        {redisParsedSchema.header && (
+                          <div>
+                            <label className="block text-xs font-semibold text-red-600 mb-2 uppercase">Header Schema (from Redis)</label>
+                            <pre className="bg-white p-3 rounded border border-red-200 text-xs overflow-x-auto max-h-64">
+                              {redisParsedSchema.header}
+                            </pre>
+                          </div>
+                        )}
+                        {redisParsedSchema.payload && (
+                          <div>
+                            <label className="block text-xs font-semibold text-red-600 mb-2 uppercase">Payload Schema (from Redis)</label>
+                            <pre className="bg-white p-3 rounded border border-red-200 text-xs overflow-x-auto max-h-64">
+                              {redisParsedSchema.payload}
+                            </pre>
+                          </div>
+                        )}
+                        <div className="mt-2">
+                          <label className="block text-xs font-semibold text-red-600 mb-2 uppercase">Full Redis JSON Object</label>
+                          <pre className="bg-white p-3 rounded border border-red-200 text-xs overflow-x-auto max-h-64">
+                            {redisSchemaDisplay}
+                          </pre>
+                        </div>
+                      </div>
+                    ) : (
+                      <pre className="bg-white p-3 rounded border border-red-200 text-xs overflow-x-auto max-h-64">
+                        {redisSchemaDisplay}
+                      </pre>
+                    )}
+                  </div>
+                );
+              })()}
 
               {eventDetail.redisData?.authorizations && eventDetail.redisData.authorizations.length > 0 && (
                 <div>

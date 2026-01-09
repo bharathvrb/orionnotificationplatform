@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import type { OnboardRequest, TaskResult, Environment } from '../types';
+import type { OnboardRequest, TaskResult, Environment, MongoDBDetailsResponse, EventDetail, DownstreamDetail } from '../types';
 import { validateRequest } from '../services/validation';
-import { updateOnp } from '../services/api';
+import { updateOnp, fetchMongoDBDetails } from '../services/api';
 import { JsonEditor } from './JsonEditor';
 import { DownstreamEditor } from './DownstreamEditor';
 import { ValidationPanel } from './ValidationPanel';
@@ -58,6 +58,9 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
   });
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const [isFetchingEvent, setIsFetchingEvent] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [eventFetched, setEventFetched] = useState(false);
 
   const updateRequest = (updates: Partial<OnboardRequest>) => {
     setRequest((prev) => ({ ...prev, ...updates }));
@@ -158,6 +161,171 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
       });
     },
   });
+
+  // Helper function to parse schema definition XML and extract Header and Payload
+  const parseSchemaDefinition = (schemaDefinition: string): { header?: string; payload?: string } | null => {
+    if (!schemaDefinition) return null;
+    
+    try {
+      const headerMatch = schemaDefinition.match(/<HeaderAttributes>([\s\S]*?)<\/HeaderAttributes>/);
+      const payloadMatch = schemaDefinition.match(/<Payload>[\s\S]*?<Schema>([\s\S]*?)<\/Schema>[\s\S]*?<\/Payload>/);
+      
+      let headerJson: string | undefined;
+      let payloadJson: string | undefined;
+      
+      const unescapeAndParseJson = (jsonString: string): string => {
+        const trimmed = jsonString.trim();
+        if (!trimmed) return trimmed;
+        
+        try {
+          let parsed: any = JSON.parse(trimmed);
+          if (typeof parsed === 'string') {
+            try {
+              parsed = JSON.parse(parsed);
+            } catch (e) {
+              const cleaned = parsed
+                .replace(/\\"/g, '"')
+                .replace(/\\\\/g, '\\')
+                .replace(/\\n/g, '\n')
+                .replace(/\\t/g, '\t');
+              try {
+                parsed = JSON.parse(cleaned);
+              } catch (e2) {
+                return cleaned;
+              }
+            }
+          }
+          return JSON.stringify(parsed, null, 2);
+        } catch (e) {
+          const cleaned = trimmed
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\')
+            .replace(/\\n/g, '\n')
+            .replace(/\\t/g, '\t');
+          try {
+            const parsed = JSON.parse(cleaned);
+            return JSON.stringify(parsed, null, 2);
+          } catch (e2) {
+            return cleaned;
+          }
+        }
+      };
+      
+      if (headerMatch && headerMatch[1]) {
+        headerJson = unescapeAndParseJson(headerMatch[1]);
+      }
+      
+      if (payloadMatch && payloadMatch[1]) {
+        payloadJson = unescapeAndParseJson(payloadMatch[1]);
+      }
+      
+      if (headerJson || payloadJson) {
+        return { header: headerJson, payload: payloadJson };
+      }
+    } catch (e) {
+      console.warn('Failed to parse schema definition:', e);
+    }
+    
+    return null;
+  };
+
+  // Function to fetch event details and pre-populate form
+  const handleFetchEventDetails = async () => {
+    if (!request.eventName?.trim()) {
+      setFetchError('Please enter an event name first');
+      return;
+    }
+
+    if (!environment) {
+      setFetchError('Please select an environment first');
+      return;
+    }
+
+    if (!authorization && !request.authorization) {
+      setFetchError('Please provide an authorization token first');
+      return;
+    }
+
+    setIsFetchingEvent(true);
+    setFetchError(null);
+
+    try {
+      const response = await fetchMongoDBDetails(
+        { eventNames: [request.eventName] },
+        undefined,
+        environment,
+        authorization || request.authorization || undefined
+      );
+
+      if (response.eventDetails && response.eventDetails.length > 0) {
+        const eventDetail = response.eventDetails[0];
+        
+        if (eventDetail.mongoDBData) {
+          // Parse and extract schemas
+          const parsedSchemas = eventDetail.mongoDBData.schemaDefinition 
+            ? parseSchemaDefinition(eventDetail.mongoDBData.schemaDefinition)
+            : null;
+
+          // Extract subscriber name from topic
+          // Backend creates topic as: subscriberName.replace("service", "topic")
+          // So we reverse it: topic.replace("topic", "service")
+          const topic = eventDetail.mongoDBData.topic || '';
+          const subscriberName = topic ? topic.replace('topic', 'service') : '';
+
+          // Map downstream details
+          // Note: Store decoded values in form for easy editing, encode before sending
+          const downstreamDetails: DownstreamDetail[] = [];
+          if (eventDetail.downstreamDetails && eventDetail.downstreamDetails.length > 0) {
+            eventDetail.downstreamDetails.forEach((downstreamWithAuth) => {
+              const downstream = downstreamWithAuth.downstream;
+              const auth = downstreamWithAuth.authorization;
+              
+              if (downstream) {
+                // Store values directly from MongoDB (no encoding/decoding needed)
+                downstreamDetails.push({
+                  name: downstream.downstreamName || '',
+                  endpoint: downstream.endpoint || '',
+                  clientId: auth?.clientId || '',
+                  clientSecret: auth?.clientSecret || '',
+                  scope: auth?.scope || '',
+                });
+              }
+            });
+          }
+
+          // Update form with fetched data
+          updateRequest({
+            eventName: eventDetail.eventType || request.eventName,
+            subscriberName: subscriberName || eventDetail.mongoDBData.topic || request.subscriberName,
+            headerSchema: parsedSchemas?.header || request.headerSchema,
+            payloadSchema: parsedSchemas?.payload || request.payloadSchema,
+            downstreamDetails: downstreamDetails.length > 0 ? downstreamDetails : request.downstreamDetails,
+          });
+
+          setEventFetched(true);
+          setFetchError(null);
+        } else {
+          setFetchError(`Event "${request.eventName}" not found in MongoDB for environment ${environment}`);
+        }
+      } else {
+        setFetchError(`Event "${request.eventName}" not found in MongoDB for environment ${environment}`);
+      }
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch event details';
+      setFetchError(errorMessage);
+      console.error('Error fetching event details:', error);
+    } finally {
+      setIsFetchingEvent(false);
+    }
+  };
+
+  // Reset form when eventName changes
+  useEffect(() => {
+    if (request.eventName && eventFetched) {
+      // Only reset if user manually changes eventName after fetching
+      // This allows editing fetched data
+    }
+  }, [request.eventName]);
 
   const handleGenerateToken = async () => {
     if (!environment) {
@@ -352,21 +520,74 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
                 <label className="block text-sm font-semibold text-primary-700 mb-2">
                   Event Name * <span className="text-xs text-gray-500 font-normal">(must exist)</span>
                 </label>
-                <input
-                  type="text"
-                  value={request.eventName || ''}
-                  onChange={(e) => updateRequest({ eventName: e.target.value })}
-                  className={`w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all bg-white text-gray-900 placeholder-gray-400 ${
-                    validationErrors.eventName 
-                      ? 'border-red-500 focus:ring-red-300 focus:border-red-500' 
-                      : 'border-primary-400 focus:ring-primary-300 focus:border-primary-500'
-                  }`}
-                  placeholder="Enter existing event name to update"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={request.eventName || ''}
+                    onChange={(e) => {
+                      updateRequest({ eventName: e.target.value });
+                      setEventFetched(false); // Reset fetched state when eventName changes
+                      setFetchError(null);
+                    }}
+                    className={`flex-1 px-4 py-2.5 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all bg-white text-gray-900 placeholder-gray-400 ${
+                      validationErrors.eventName 
+                        ? 'border-red-500 focus:ring-red-300 focus:border-red-500' 
+                        : 'border-primary-400 focus:ring-primary-300 focus:border-primary-500'
+                    }`}
+                    placeholder="Enter existing event name to update"
+                    disabled={mutation.isPending}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleFetchEventDetails}
+                    disabled={!request.eventName?.trim() || !environment || (!authorization && !request.authorization) || isFetchingEvent || mutation.isPending}
+                    className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all whitespace-nowrap ${
+                      !!(request.eventName?.trim() && environment && (authorization || request.authorization) && !isFetchingEvent && !mutation.isPending)
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-400 hover:to-blue-500 shadow-lg hover:shadow-xl'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    title={
+                      !request.eventName?.trim() 
+                        ? 'Enter event name first' 
+                        : !environment 
+                        ? 'Select environment first' 
+                        : !authorization && !request.authorization
+                        ? 'Provide authorization token first'
+                        : 'Fetch event details from MongoDB'
+                    }
+                  >
+                    {isFetchingEvent ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Fetching...
+                      </span>
+                    ) : (
+                      '📥 Fetch Details'
+                    )}
+                  </button>
+                </div>
                 {validationErrors.eventName && (
                   <p className="mt-1 text-sm text-red-600 font-medium">
                     {validationErrors.eventName}
                   </p>
+                )}
+                {fetchError && (
+                  <div className="mt-2 p-3 bg-red-50 border-2 border-red-300 rounded-lg">
+                    <p className="text-sm text-red-700 font-medium">{fetchError}</p>
+                  </div>
+                )}
+                {eventFetched && !fetchError && (
+                  <div className="mt-2 p-3 bg-green-50 border-2 border-green-300 rounded-lg">
+                    <p className="text-sm text-green-700 font-medium flex items-center">
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Event details loaded successfully. You can now edit the fields below.
+                    </p>
+                  </div>
                 )}
               </div>
 
