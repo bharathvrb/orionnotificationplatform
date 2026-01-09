@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import type { OnboardRequest, TaskResult, Environment, MongoDBDetailsResponse, EventDetail, DownstreamDetail } from '../types';
+import type { OnboardRequest, TaskResult, Environment, DownstreamDetail } from '../types';
 import { validateRequest } from '../services/validation';
 import { updateOnp, fetchMongoDBDetails } from '../services/api';
 import { JsonEditor } from './JsonEditor';
