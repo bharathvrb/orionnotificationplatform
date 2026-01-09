@@ -76,21 +76,33 @@ export const Home: React.FC = () => {
   const actionCards = [
     {
       title: 'New Event Onboarding',
-      description: 'Configure and onboard new events to the platform with ease',
+      description: (
+        <>
+          Configure and <span style={{ fontWeight: '700', color: '#000000' }}>onboard</span> <span style={{ fontWeight: '700', color: '#000000' }}>new events</span> to the platform with ease
+        </>
+      ),
       iconComponent: OnboardIcon,
       gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
       onClick: () => navigate('/onboard'),
     },
     {
       title: 'MongoDB and Redis Details',
-      description: 'View existing events, insert new events, or update event entries in MongoDB and refresh Redis cache',
+      description: (
+        <>
+          <span style={{ fontWeight: '700', color: '#000000' }}>View</span> <span style={{ fontWeight: '700', color: '#000000' }}>existing events</span>, <span style={{ fontWeight: '700', color: '#000000' }}>insert</span> <span style={{ fontWeight: '700', color: '#000000' }}>new event</span>, or <span style={{ fontWeight: '700', color: '#000000' }}>update event</span> entries in MongoDB and refresh Redis cache
+        </>
+      ),
       iconComponent: MongoDBIcon,
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       onClick: () => navigate('/mongodb'),
     },
     {
       title: 'Kafka Details',
-      description: 'View existing Kafka topics and consumer groups, or create new Kafka topics with specified partitions and replication factor',
+      description: (
+        <>
+          <span style={{ fontWeight: '700', color: '#000000' }}>View</span> <span style={{ fontWeight: '700', color: '#000000' }}>existing Kafka topics</span> and consumer groups, or <span style={{ fontWeight: '700', color: '#000000' }}>create</span> <span style={{ fontWeight: '700', color: '#000000' }}>new Kafka topic</span> with specified partitions and replication factor
+        </>
+      ),
       iconComponent: KafkaIcon,
       gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
       onClick: () => navigate('/kafka'),
