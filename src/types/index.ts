@@ -69,6 +69,30 @@ export interface ValidationError {
   message: string;
 }
 
+export interface PartitionAssignment {
+  partition: number;
+  currentOffset?: number;
+  logEndOffset?: number;
+  lag?: number;
+  memberId?: string;
+}
+
+export interface ConsumerGroupDetails {
+  groupId: string;
+  state?: string;
+  protocolType?: string;
+  members?: number;
+  partitionAssignments?: PartitionAssignment[];
+  totalLag?: number;
+}
+
+export interface PartitionDetail {
+  partition: number;
+  leader?: number;
+  replicas?: number[];
+  inSyncReplicas?: number[];
+}
+
 export interface KafkaDetailsResponse {
   topicName?: string;
   health?: string;
@@ -78,6 +102,8 @@ export interface KafkaDetailsResponse {
   replicationFactor?: number;
   config?: Record<string, string>;
   consumerGroups?: string[];
+  consumerGroupDetails?: ConsumerGroupDetails[];
+  partitionDetails?: PartitionDetail[];
 }
 
 export interface KafkaDetailsRequest {

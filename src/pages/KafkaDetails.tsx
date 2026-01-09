@@ -203,6 +203,17 @@ export const KafkaDetails: React.FC<KafkaDetailsProps> = ({ hideHeader = false }
       setHasSubmitted(true);
       setFormHasChanged(false);
       
+      // Debug: Log consumer groups for troubleshooting
+      if (response.topicDetails) {
+        response.topicDetails.forEach(topic => {
+          if (topic.consumerGroups) {
+            console.log(`Topic "${topic.topicName}" has ${topic.consumerGroups.length} consumer group(s):`, topic.consumerGroups);
+          } else {
+            console.log(`Topic "${topic.topicName}" has no consumer groups (consumerGroups is ${topic.consumerGroups})`);
+          }
+        });
+      }
+      
       // Check if response indicates failure
       if (response.status === 'Failure') {
         const errorMsg = response.message || 'Failed to fetch Kafka details';
@@ -1089,8 +1100,149 @@ const TopicDetailCard: React.FC<TopicDetailCardProps> = ({
             </div>
           )}
 
-          {/* Consumer Groups - Enhanced */}
-          {topicDetail.consumerGroups && topicDetail.consumerGroups.length > 0 && (
+          {/* Partition Details */}
+          {topicDetail.partitionDetails && topicDetail.partitionDetails.length > 0 && (
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+              <h4 className="text-lg font-bold text-primary-700 mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Partition Details ({topicDetail.partitionDetails.length})
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Partition</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Leader</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Replicas</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">In-Sync Replicas</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {topicDetail.partitionDetails.map((partition, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{partition.partition}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{partition.leader ?? 'N/A'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                          {partition.replicas && partition.replicas.length > 0 ? partition.replicas.join(', ') : 'N/A'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                          {partition.inSyncReplicas && partition.inSyncReplicas.length > 0 ? partition.inSyncReplicas.join(', ') : 'N/A'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Consumer Groups - Detailed */}
+          {topicDetail.consumerGroupDetails && topicDetail.consumerGroupDetails.length > 0 && (
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-bold text-primary-700 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Consumer Groups Details ({topicDetail.consumerGroupDetails.length})
+                </h4>
+              </div>
+              <div className="space-y-4">
+                {topicDetail.consumerGroupDetails.map((cgDetail, cgIndex) => (
+                  <div key={cgIndex} className="border border-gray-200 rounded-lg p-4 bg-gradient-to-br from-green-50 to-white">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h5 className="text-md font-bold text-gray-900 mb-2">{cgDetail.groupId}</h5>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-600 font-medium">State:</span>
+                            <span className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${
+                              cgDetail.state === 'Stable' ? 'bg-green-100 text-green-800' :
+                              cgDetail.state === 'Dead' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {cgDetail.state || 'Unknown'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600 font-medium">Members:</span>
+                            <span className="ml-2 text-gray-900 font-semibold">{cgDetail.members ?? 0}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600 font-medium">Protocol:</span>
+                            <span className="ml-2 text-gray-900">{cgDetail.protocolType || 'N/A'}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600 font-medium">Total Lag:</span>
+                            <span className={`ml-2 font-semibold ${
+                              (cgDetail.totalLag ?? 0) > 10000 ? 'text-red-600' :
+                              (cgDetail.totalLag ?? 0) > 1000 ? 'text-yellow-600' :
+                              'text-green-600'
+                            }`}>
+                              {cgDetail.totalLag?.toLocaleString() ?? 0}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleCopy(cgDetail.groupId, `cg-detail-${cgIndex}`)}
+                        className="ml-2 text-green-600 hover:text-green-800 flex-shrink-0"
+                        title="Copy group ID"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    {cgDetail.partitionAssignments && cgDetail.partitionAssignments.length > 0 && (
+                      <div className="mt-3">
+                        <h6 className="text-sm font-semibold text-gray-700 mb-2">Partition Assignments:</h6>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead className="bg-gray-100">
+                              <tr>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Partition</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Current Offset</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Log End Offset</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Lag</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Member ID</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {cgDetail.partitionAssignments.map((assignment, idx) => (
+                                <tr key={idx} className="hover:bg-gray-50">
+                                  <td className="px-3 py-2 whitespace-nowrap font-medium">{assignment.partition}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap">{assignment.currentOffset?.toLocaleString() ?? 'N/A'}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap">{assignment.logEndOffset?.toLocaleString() ?? 'N/A'}</td>
+                                  <td className={`px-3 py-2 whitespace-nowrap font-semibold ${
+                                    (assignment.lag ?? 0) > 10000 ? 'text-red-600' :
+                                    (assignment.lag ?? 0) > 1000 ? 'text-yellow-600' :
+                                    'text-green-600'
+                                  }`}>
+                                    {assignment.lag?.toLocaleString() ?? 0}
+                                  </td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 truncate max-w-xs" title={assignment.memberId}>
+                                    {assignment.memberId || 'N/A'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Consumer Groups - Simple List (fallback if detailed info not available) */}
+          {(!topicDetail.consumerGroupDetails || topicDetail.consumerGroupDetails.length === 0) && 
+           topicDetail.consumerGroups && topicDetail.consumerGroups.length > 0 && (
             <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-lg font-bold text-primary-700 flex items-center">
