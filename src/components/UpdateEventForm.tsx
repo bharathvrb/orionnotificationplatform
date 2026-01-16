@@ -163,49 +163,72 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
   });
 
   // Helper function to parse schema definition XML and extract Header and Payload
+  // Handles escaped JSON strings (double-escaped) from MongoDB/Redis
+  // This matches the implementation in MongoDBDetails.tsx for consistency
   const parseSchemaDefinition = (schemaDefinition: string): { header?: string; payload?: string } | null => {
     if (!schemaDefinition) return null;
     
     try {
+      // Try to extract HeaderAttributes JSON - match content between tags (non-greedy, handles whitespace)
       const headerMatch = schemaDefinition.match(/<HeaderAttributes>([\s\S]*?)<\/HeaderAttributes>/);
+      // Try to extract Payload Schema JSON - match content between <Schema> tags within <Payload>
       const payloadMatch = schemaDefinition.match(/<Payload>[\s\S]*?<Schema>([\s\S]*?)<\/Schema>[\s\S]*?<\/Payload>/);
       
       let headerJson: string | undefined;
       let payloadJson: string | undefined;
       
+      // Helper function to unescape and parse JSON (handles both escaped and non-escaped JSON)
+      // This function handles schemas stored in MongoDB/Redis which are double-escaped JSON strings
       const unescapeAndParseJson = (jsonString: string): string => {
         const trimmed = jsonString.trim();
         if (!trimmed) return trimmed;
         
         try {
+          // First parse - might give us a string if it's escaped, or an object if it's not
           let parsed: any = JSON.parse(trimmed);
+          
+          // If the result is a string, it was escaped, so parse again to get the actual JSON object
           if (typeof parsed === 'string') {
             try {
+              // Second parse to get the actual JSON object
               parsed = JSON.parse(parsed);
             } catch (e) {
+              // If second parse fails, the string might have extra escaping or be malformed
+              // Try to clean up common escaping issues and parse again
               const cleaned = parsed
-                .replace(/\\"/g, '"')
-                .replace(/\\\\/g, '\\')
-                .replace(/\\n/g, '\n')
-                .replace(/\\t/g, '\t');
+                .replace(/\\"/g, '"')  // Replace escaped quotes
+                .replace(/\\\\/g, '\\') // Replace double backslashes
+                .replace(/\\n/g, '\n') // Replace escaped newlines
+                .replace(/\\t/g, '\t'); // Replace escaped tabs
               try {
                 parsed = JSON.parse(cleaned);
               } catch (e2) {
+                // If still fails after cleaning, return the cleaned string as-is (might be invalid JSON)
+                console.warn('Failed to parse JSON after cleaning:', e2);
                 return cleaned;
               }
             }
           }
+          
+          // Format the parsed JSON nicely with proper indentation
           return JSON.stringify(parsed, null, 2);
         } catch (e) {
+          // If initial parsing fails, the string might not be valid JSON or might need cleaning
+          // Try to clean up common escaping issues
           const cleaned = trimmed
-            .replace(/\\"/g, '"')
-            .replace(/\\\\/g, '\\')
-            .replace(/\\n/g, '\n')
-            .replace(/\\t/g, '\t');
+            .replace(/\\"/g, '"')  // Replace escaped quotes
+            .replace(/\\\\/g, '\\') // Replace double backslashes
+            .replace(/\\n/g, '\n') // Replace escaped newlines
+            .replace(/\\t/g, '\t'); // Replace escaped tabs
+          
           try {
+            // Try parsing the cleaned string
             const parsed = JSON.parse(cleaned);
             return JSON.stringify(parsed, null, 2);
           } catch (e2) {
+            // If still fails, return the cleaned string as-is
+            // This handles edge cases where the JSON might be malformed
+            console.warn('Failed to parse JSON even after cleaning:', e2);
             return cleaned;
           }
         }
@@ -223,6 +246,7 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
         return { header: headerJson, payload: payloadJson };
       }
     } catch (e) {
+      // If parsing fails, return null to show original
       console.warn('Failed to parse schema definition:', e);
     }
     
@@ -261,19 +285,33 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
         const eventDetail = response.eventDetails[0];
         
         if (eventDetail.mongoDBData) {
-          // Parse and extract schemas
-          const parsedSchemas = eventDetail.mongoDBData.schemaDefinition 
-            ? parseSchemaDefinition(eventDetail.mongoDBData.schemaDefinition)
-            : null;
+          // Parse and extract schemas from MongoDB schemaDefinition
+          // The schemaDefinition contains XML with escaped JSON strings
+          let parsedSchemas: { header?: string; payload?: string } | null = null;
+          if (eventDetail.mongoDBData.schemaDefinition) {
+            parsedSchemas = parseSchemaDefinition(eventDetail.mongoDBData.schemaDefinition);
+            if (!parsedSchemas) {
+              console.warn('Failed to parse schema definition from MongoDB');
+            }
+          }
 
           // Extract subscriber name from topic
           // Backend creates topic as: subscriberName.replace("service", "topic")
           // So we reverse it: topic.replace("topic", "service")
           const topic = eventDetail.mongoDBData.topic || '';
-          const subscriberName = topic ? topic.replace('topic', 'service') : '';
+          let subscriberName = '';
+          if (topic) {
+            // Try to extract subscriber name by replacing "topic" with "service"
+            subscriberName = topic.replace(/topic/gi, 'service');
+          }
+          
+          // Fallback: if topic doesn't contain "topic", use it as-is (might already be subscriber name)
+          if (!subscriberName) {
+            subscriberName = topic;
+          }
 
-          // Map downstream details
-          // Note: Store decoded values in form for easy editing, encode before sending
+          // Map downstream details with all available fields
+          // Extract all attributes from MongoDB response to populate editable form fields
           const downstreamDetails: DownstreamDetail[] = [];
           if (eventDetail.downstreamDetails && eventDetail.downstreamDetails.length > 0) {
             eventDetail.downstreamDetails.forEach((downstreamWithAuth) => {
@@ -281,26 +319,51 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
               const auth = downstreamWithAuth.authorization;
               
               if (downstream) {
-                // Store values directly from MongoDB (no encoding/decoding needed)
+                // Extract all available fields from MongoDB response
+                // Include all fields that can be edited in the form
                 downstreamDetails.push({
                   name: downstream.downstreamName || '',
                   endpoint: downstream.endpoint || '',
                   clientId: auth?.clientId || '',
                   clientSecret: auth?.clientSecret || '',
                   scope: auth?.scope || '',
+                  // Include additional fields if present (for fallback DB scenarios)
+                  httpStatusCode: undefined, // Not stored in MongoDB for regular downstreams
+                  maintenanceFlag: false, // Default value if not present
+                  maxRetryCount: undefined, // Default value if not present
+                  retryDelay: undefined, // Default value if not present
                 });
               }
             });
           }
 
-          // Update form with fetched data
-          updateRequest({
+          // Prepare form updates - only update fields that have values from MongoDB
+          const updates: Partial<OnboardRequest> = {
             eventName: eventDetail.eventType || request.eventName,
-            subscriberName: subscriberName || eventDetail.mongoDBData.topic || request.subscriberName,
-            headerSchema: parsedSchemas?.header || request.headerSchema,
-            payloadSchema: parsedSchemas?.payload || request.payloadSchema,
-            downstreamDetails: downstreamDetails.length > 0 ? downstreamDetails : request.downstreamDetails,
-          });
+          };
+          
+          // Update subscriber name if we found one
+          if (subscriberName) {
+            updates.subscriberName = subscriberName;
+          }
+          
+          // Update schemas if parsed successfully
+          if (parsedSchemas) {
+            if (parsedSchemas.header) {
+              updates.headerSchema = parsedSchemas.header;
+            }
+            if (parsedSchemas.payload) {
+              updates.payloadSchema = parsedSchemas.payload;
+            }
+          }
+          
+          // Update downstream details if we found any
+          if (downstreamDetails.length > 0) {
+            updates.downstreamDetails = downstreamDetails;
+          }
+
+          // Update form with all fetched data
+          updateRequest(updates);
 
           setEventFetched(true);
           setFetchError(null);

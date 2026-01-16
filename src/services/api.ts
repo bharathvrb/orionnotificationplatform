@@ -211,17 +211,23 @@ export const onboardOnp = async (
     }
     if (request.downstreamDetails && request.downstreamDetails.length > 0) {
       // Transform downstreamDetails to match backend types
-      body.downstreamDetails = request.downstreamDetails.map(detail => ({
-        name: detail.name,
-        endpoint: detail.endpoint,
-        clientId: detail.clientId,
-        clientSecret: detail.clientSecret,
-        scope: detail.scope,
-        httpStatusCode: detail.httpStatusCode?.toString(), // Backend expects String
-        maintenanceFlag: detail.maintenanceFlag ? 1 : 0, // Backend expects int (0 or 1)
-        maxRetryCount: detail.maxRetryCount || 0, // Backend expects int
-        retryDelay: detail.retryDelay || 0, // Backend expects int
-      }));
+      body.downstreamDetails = request.downstreamDetails.map(detail => {
+        const mappedDetail: any = {
+          name: detail.name,
+          endpoint: detail.endpoint,
+          clientId: detail.clientId,
+          clientSecret: detail.clientSecret,
+          scope: detail.scope,
+          maintenanceFlag: detail.maintenanceFlag ? 1 : 0, // Backend expects int (0 or 1)
+          maxRetryCount: detail.maxRetryCount ?? 0, // Backend expects int, default to 0
+          retryDelay: detail.retryDelay ?? 0, // Backend expects int, default to 0
+        };
+        // Only include httpStatusCode if it's defined (backend expects String or omit)
+        if (detail.httpStatusCode !== undefined && detail.httpStatusCode !== null) {
+          mappedDetail.httpStatusCode = detail.httpStatusCode.toString();
+        }
+        return mappedDetail;
+      });
     }
     if (request.subscriberName) {
       body.subscriberName = request.subscriberName;
@@ -737,17 +743,24 @@ export const updateOnp = async (
     }
     
     if (request.downstreamDetails && request.downstreamDetails.length > 0) {
-      body.downstreamDetails = request.downstreamDetails.map(detail => ({
-        name: detail.name,
-        endpoint: detail.endpoint,
-        clientId: detail.clientId,
-        clientSecret: detail.clientSecret,
-        scope: detail.scope,
-        httpStatusCode: detail.httpStatusCode?.toString(),
-        maintenanceFlag: detail.maintenanceFlag ? 1 : 0,
-        maxRetryCount: detail.maxRetryCount || 0,
-        retryDelay: detail.retryDelay || 0,
-      }));
+      // Transform downstreamDetails to match backend types
+      body.downstreamDetails = request.downstreamDetails.map(detail => {
+        const mappedDetail: any = {
+          name: detail.name,
+          endpoint: detail.endpoint,
+          clientId: detail.clientId,
+          clientSecret: detail.clientSecret,
+          scope: detail.scope,
+          maintenanceFlag: detail.maintenanceFlag ? 1 : 0, // Backend expects int (0 or 1)
+          maxRetryCount: detail.maxRetryCount ?? 0, // Backend expects int, default to 0
+          retryDelay: detail.retryDelay ?? 0, // Backend expects int, default to 0
+        };
+        // Only include httpStatusCode if it's defined (backend expects String or omit)
+        if (detail.httpStatusCode !== undefined && detail.httpStatusCode !== null) {
+          mappedDetail.httpStatusCode = detail.httpStatusCode.toString();
+        }
+        return mappedDetail;
+      });
     }
     
     if (request.subscriberName) {
