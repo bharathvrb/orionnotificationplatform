@@ -9,7 +9,6 @@ interface ValidationPanelProps {
 }
 
 export const ValidationPanel: React.FC<ValidationPanelProps> = ({
-  errors,
   requestCriteria,
   isValid,
 }) => {

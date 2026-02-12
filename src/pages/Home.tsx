@@ -8,6 +8,37 @@ export const Home: React.FC = () => {
   const [showAbout, setShowAbout] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showUserGuide, setShowUserGuide] = useState(false);
+  const [cardTransition, setCardTransition] = useState<{
+    title: string;
+    gradient: string;
+    path: string;
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  const handleCardClick = (
+    e: React.MouseEvent<HTMLDivElement>,
+    path: string,
+    title: string,
+    gradient: string
+  ) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setCardTransition({
+      title,
+      gradient,
+      path,
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    });
+    setTimeout(() => {
+      navigate(path);
+      setCardTransition(null);
+    }, 1800);
+  };
 
   // Function to download image
   const downloadImage = async (imagePath: string, imageName: string) => {
@@ -78,29 +109,29 @@ export const Home: React.FC = () => {
       title: 'New Event Onboarding',
       description: 'Configure and onboard new events to the platform with ease',
       iconComponent: OnboardIcon,
-      gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-      onClick: () => navigate('/onboard'),
+      gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+      path: '/onboard',
     },
     {
       title: 'MongoDB and Redis Details',
       description: 'View existing events, insert new event, or update event entries in MongoDB and refresh Redis cache',
       iconComponent: MongoDBIcon,
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-      onClick: () => navigate('/mongodb'),
+      path: '/mongodb',
     },
     {
       title: 'Kafka Details',
       description: 'View existing Kafka topics and consumer groups, or create new Kafka topic with specified partitions and replication factor',
       iconComponent: KafkaIcon,
       gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      onClick: () => navigate('/kafka'),
+      path: '/kafka',
     },
     {
       title: 'View Complete Event Information',
       description: 'Browse and view all event configurations with detailed information',
       iconComponent: ViewEventsIcon,
-      gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-      onClick: () => navigate('/events'),
+      gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+      path: '/events',
     },
   ];
 
@@ -143,6 +174,44 @@ export const Home: React.FC = () => {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+        @keyframes cardTransitionPop {
+          from {
+            opacity: 0;
+            transform: scale(0.9) translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        @keyframes cardTransitionProgress {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+        @keyframes cardTransitionBackdrop {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes cornerFill {
+          0% { clip-path: polygon(0 0, 0 0, 0 0); }
+          70% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+          85% { clip-path: polygon(0 0, 102% 0, 102% 102%, 0 102%); }
+          100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+        }
+        @keyframes cardTransitionScale {
+          0% { transform: scale(0.96); opacity: 0.6; }
+          50% { transform: scale(1.02); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes cardTransitionText {
+          0% { opacity: 0; transform: scale(0.88); }
+          60% { opacity: 0; transform: scale(0.88); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes cardShimmer {
+          0% { transform: translateX(-100%); opacity: 0.6; }
+          100% { transform: translateX(400%); opacity: 0.4; }
         }
       `}</style>
       
@@ -806,7 +875,7 @@ export const Home: React.FC = () => {
               return (
               <div
                 key={index}
-                onClick={card.onClick}
+                onClick={(e) => handleCardClick(e, card.path, card.title, card.gradient)}
                 style={{
                   backgroundColor: isComingSoon 
                     ? 'rgba(255, 255, 255, 0.6)' 
@@ -833,12 +902,12 @@ export const Home: React.FC = () => {
                 }}
                 onMouseEnter={(e) => {
                   if (!isComingSoon) {
-                    e.currentTarget.style.transform = 'translateY(-8px)';
-                    e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.12)';
+                    e.currentTarget.style.transform = 'translateY(-12px) scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 20px 50px rgba(0, 0, 0, 0.2), 0 8px 20px rgba(0, 0, 0, 0.12)';
+                    e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.14)';
                     const overlay = e.currentTarget.querySelector('.card-gradient-overlay') as HTMLElement;
                     if (overlay) {
-                      overlay.style.opacity = '0.03';
+                      overlay.style.opacity = '0.12';
                     }
                     const indicator = e.currentTarget.querySelector('.card-indicator') as HTMLElement;
                     if (indicator) {
@@ -849,7 +918,7 @@ export const Home: React.FC = () => {
                 }}
                 onMouseLeave={(e) => {
                   if (!isComingSoon) {
-                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
                     e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08)';
                     e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.06)';
                     const overlay = e.currentTarget.querySelector('.card-gradient-overlay') as HTMLElement;
@@ -1031,6 +1100,82 @@ export const Home: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Card transition: color fill from corner + animations */}
+      {cardTransition && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Card-shaped overlay with scale-in */}
+          <div
+            style={{
+              position: 'fixed',
+              left: cardTransition.left,
+              top: cardTransition.top,
+              width: cardTransition.width,
+              height: cardTransition.height,
+              borderRadius: '1.25rem',
+              overflow: 'hidden',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
+              animation: 'cardTransitionScale 0.85s cubic-bezier(0.34, 1.2, 0.64, 1) forwards'
+            }}
+          >
+            {/* Gradient fills from top-left with slight overshoot */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: cardTransition.gradient,
+                animation: 'cornerFill 1.15s cubic-bezier(0.34, 1.2, 0.64, 1) forwards',
+                clipPath: 'polygon(0 0, 0 0, 0 0)'
+              }}
+            />
+            {/* Shimmer sweep across the card */}
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: '30%',
+                height: '100%',
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 30%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.25) 70%, transparent 100%)',
+                animation: 'cardShimmer 1s ease-out 0.75s both',
+                pointerEvents: 'none'
+              }}
+            />
+            {/* "Opening" text with pop-in */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '1rem'
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '0.9375rem',
+                  fontWeight: '700',
+                  color: 'rgba(255,255,255,0.95)',
+                  textShadow: '0 1px 6px rgba(0,0,0,0.35)',
+                  animation: 'cardTransitionText 0.8s cubic-bezier(0.34, 1.2, 0.64, 1) 0.5s both',
+                  textAlign: 'center'
+                }}
+              >
+                Opening {cardTransition.title}…
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Image Modal */}
       {selectedImage && (
@@ -1364,10 +1509,10 @@ const UserGuideContent: React.FC = () => {
         <h3 style={subHeadingStyle}>Platform Actions</h3>
         <p style={textStyle}>Four action cards provide quick access to main features:</p>
         <ul style={listStyle}>
-          <li><strong>New Event Onboarding</strong> (Blue): Configure and onboard new events with multiple request criteria (MongoDB/Redis, Kafka Topic, Deployment Manifest, etc.)</li>
+          <li><strong>New Event Onboarding</strong> (Purple): Configure and onboard new events with multiple request criteria (MongoDB/Redis, Kafka Topic, Deployment Manifest, etc.)</li>
           <li><strong>MongoDB and Redis Details</strong> (Green): Access three sub-options - View existing events, Insert new events, or Update existing event entries in MongoDB and refresh Redis cache</li>
           <li><strong>Kafka Details</strong> (Orange): Access two sub-options - View existing Kafka topics and consumer groups, or Create new Kafka topics with specified configuration</li>
-          <li><strong>View Complete Event Information</strong> (Purple): Browse and view all event configurations with detailed information</li>
+          <li><strong>View Complete Event Information</strong> (Blue): Browse and view all event configurations with detailed information</li>
         </ul>
       </div>
 
