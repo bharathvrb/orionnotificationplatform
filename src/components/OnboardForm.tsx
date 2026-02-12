@@ -634,14 +634,14 @@ export const OnboardForm: React.FC = () => {
                 <JsonEditor
                   value={request.headerSchema || ''}
                   onChange={(value) => updateRequest({ headerSchema: value })}
-                  label="Header Schema"
+                  label="Header Schema *"
                   height="200px"
                   error={validationErrors.headerSchema}
                 />
                 <JsonEditor
                   value={request.payloadSchema || ''}
                   onChange={(value) => updateRequest({ payloadSchema: value })}
-                  label="Payload Schema"
+                  label="Payload Schema *"
                   height="200px"
                   error={validationErrors.payloadSchema}
                 />
