@@ -10,6 +10,7 @@ import { DownstreamEditor } from './DownstreamEditor';
 import { ValidationPanel } from './ValidationPanel';
 import { TaskResults } from './TaskResults';
 import { ProductionWarning } from './ProductionWarning';
+import { DEFAULT_MONGODB_HEADER_SCHEMA } from '../constants/schemas';
 
 const ENVIRONMENT_OPTIONS: Environment[] = [
   'DEV AS-G8',
@@ -42,6 +43,7 @@ export const InsertEventForm: React.FC<InsertEventFormProps> = ({ hideHeader = f
   const [request, setRequest] = useState<OnboardRequest>({
     requestCriteria: ['mongodbandredis'], // Pre-select MongoDB and Redis
     downstreamDetails: [],
+    headerSchema: DEFAULT_MONGODB_HEADER_SCHEMA,
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [taskResults, setTaskResults] = useState<TaskResult[]>([]);

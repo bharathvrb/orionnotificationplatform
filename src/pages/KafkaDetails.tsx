@@ -1224,9 +1224,10 @@ const TopicDetailCard: React.FC<TopicDetailCardProps> = ({
             </div>
           )}
 
-          {/* Consumer Groups - Simple List (fallback if detailed info not available) */}
-          {(!topicDetail.consumerGroupDetails || topicDetail.consumerGroupDetails.length === 0) && 
-           topicDetail.consumerGroups && topicDetail.consumerGroups.length > 0 && (
+          {/* Consumer Groups - Simple list (only when we have group names and no detailed info) */}
+          {(!topicDetail.consumerGroupDetails || topicDetail.consumerGroupDetails.length === 0) &&
+           topicDetail.consumerGroups &&
+           topicDetail.consumerGroups.length > 0 && (
             <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-lg font-bold text-primary-700 flex items-center">
@@ -1289,17 +1290,7 @@ const TopicDetailCard: React.FC<TopicDetailCardProps> = ({
             </div>
           )}
 
-          {(!topicDetail.consumerGroups || topicDetail.consumerGroups.length === 0) && (
-            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-              <h4 className="text-lg font-bold text-primary-700 mb-2 flex items-center">
-                <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                Consumer Groups
-              </h4>
-              <p className="text-gray-600">No consumer groups found for this topic.</p>
-            </div>
-          )}
+          {/* Consumer Groups section is only shown when consumerGroupDetails or consumerGroups has data; otherwise not displayed */}
 
           {/* Status Message */}
           {topicDetail.message && (

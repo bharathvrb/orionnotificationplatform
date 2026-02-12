@@ -39,6 +39,19 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
     }
   }, [value]);
 
+  const handleBeautify = () => {
+    if (value.trim() === '') return;
+    try {
+      const parsed = JSON.parse(value);
+      const beautified = JSON.stringify(parsed, null, 2);
+      onChange(beautified);
+    } catch {
+      // Invalid JSON - button is disabled, no-op
+    }
+  };
+
+  const canBeautify = value.trim() !== '' && isValid && !error;
+
   return (
     <div className="mb-4">
       <label className="block text-sm font-semibold text-primary-700 mb-2">
@@ -64,6 +77,21 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
             tabSize: 2,
           }}
         />
+      </div>
+      <div className="mt-2 flex justify-end">
+        <button
+          type="button"
+          onClick={handleBeautify}
+          disabled={!canBeautify}
+          className={`text-sm font-semibold px-3 py-1.5 rounded-lg transition-all ${
+            canBeautify
+              ? 'bg-gray-200 text-gray-800 hover:bg-gray-300 shadow-sm border border-gray-300'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+          }`}
+          title={canBeautify ? 'Format JSON with indentation' : 'Enter valid JSON to beautify'}
+        >
+          Beautify JSON
+        </button>
       </div>
       {(error || parseError) && (
         <p className="mt-2 text-sm text-red-600 font-medium bg-red-50 p-2 rounded-lg border-2 border-red-300">{error || parseError}</p>

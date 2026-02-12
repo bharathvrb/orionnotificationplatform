@@ -569,13 +569,33 @@ export const fetchMongoDBDetails = async (
       headersKeys: Object.keys(requestConfig.headers)
     });
     
-    const response = await apiClient.post<MongoDBDetailsResponse>(
+    const response = await apiClient.post<MongoDBDetailsResponse | any>(
       `${API_BASE_URL}/mongoDBDetails`,
       request,
       requestConfig
     );
 
-    return response.data;
+    // Normalize backend response: support both camelCase and snake_case so Redis/MongoDB counts and UI work
+    const data = response.data;
+    const rawEvents = data?.eventDetails ?? data?.event_details;
+    if (rawEvents && Array.isArray(rawEvents)) {
+      data.eventDetails = rawEvents.map((ev: any) => {
+        const redisRaw = ev.redisData ?? ev.redis_data;
+        const mongoRaw = ev.mongoDBData ?? ev.mongo_db_data;
+        const downstreamRaw = ev.downstreamDetails ?? ev.downstream_details;
+        return {
+          ...ev,
+          eventType: ev.eventType ?? ev.event_type,
+          mongoDBData: mongoRaw,
+          redisData: redisRaw != null ? {
+            notificationSchema: redisRaw.notificationSchema ?? redisRaw.notification_schema,
+            authorizations: redisRaw.authorizations ?? redisRaw.authorizations,
+          } : undefined,
+          downstreamDetails: downstreamRaw,
+        };
+      });
+    }
+    return data as MongoDBDetailsResponse;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError<any>;

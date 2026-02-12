@@ -11,6 +11,7 @@ import { DownstreamEditor } from './DownstreamEditor';
 import { ValidationPanel } from './ValidationPanel';
 import { TaskResults } from './TaskResults';
 import { ProductionWarning } from './ProductionWarning';
+import { DEFAULT_MONGODB_HEADER_SCHEMA } from '../constants/schemas';
 
 const CRITERIA_OPTIONS: { value: RequestCriteria; label: string }[] = [
   { value: 'mongodbandredis', label: 'MongoDB and Redis' },
@@ -71,6 +72,16 @@ export const OnboardForm: React.FC = () => {
       setRequest(template);
     }
   }, []);
+
+  // Set default MongoDB Header Schema when MongoDB and Redis is selected and header is empty
+  useEffect(() => {
+    if (
+      request.requestCriteria?.includes('mongodbandredis') &&
+      !request.headerSchema?.trim()
+    ) {
+      setRequest((prev) => ({ ...prev, headerSchema: DEFAULT_MONGODB_HEADER_SCHEMA }));
+    }
+  }, [request.requestCriteria?.includes('mongodbandredis')]);
 
   // Auto-save template on change
   useEffect(() => {

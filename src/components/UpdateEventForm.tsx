@@ -10,6 +10,7 @@ import { ValidationPanel } from './ValidationPanel';
 import { TaskResults } from './TaskResults';
 import { generateSatToken } from '../services/sat';
 import { ProductionWarning } from './ProductionWarning';
+import { DEFAULT_MONGODB_HEADER_SCHEMA } from '../constants/schemas';
 
 const ENVIRONMENT_OPTIONS: Environment[] = [
   'DEV AS-G8',
@@ -43,6 +44,7 @@ export const UpdateEventForm: React.FC<UpdateEventFormProps> = ({ hideHeader = f
   const [request, setRequest] = useState<OnboardRequest>({
     requestCriteria: ['mongodbandredis'], // Default to MongoDB and Redis for updates
     downstreamDetails: [],
+    headerSchema: DEFAULT_MONGODB_HEADER_SCHEMA,
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [taskResults, setTaskResults] = useState<TaskResult[]>([]);
