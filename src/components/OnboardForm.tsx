@@ -309,11 +309,6 @@ export const OnboardForm: React.FC = () => {
 
         {/* Environment Selection Section - Show first */}
         <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
-          <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-            <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-            Select Environment
-          </h2>
-          
           <div className="mb-6">
             <label htmlFor="environment" className="block text-sm font-semibold text-primary-700 mb-3">
               Environment *
@@ -349,15 +344,18 @@ export const OnboardForm: React.FC = () => {
         </div>
 
         {/* Form Fields - Show only when environment is selected */}
-        {environment ? (
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {environment && (
+          <form onSubmit={handleSubmit}>
+            {/* Single Onboard Event Box */}
+            <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
+              <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
+                <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
+                Onboard Event
+              </h2>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Form */}
             <div className="space-y-6">
-              <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
-                <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-                  <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-                  Request Configuration
-                </h2>
 
               {/* Request Criteria */}
               <div className="mb-6">
@@ -615,18 +613,13 @@ export const OnboardForm: React.FC = () => {
                   showClientAndEndpoint={request.requestCriteria?.includes('mongodbandredis') || false}
                 />
               )}
-            </div>
           </div>
 
-          {/* Right Column - JSON Preview & Submit */}
+          {/* Right Column - JSON Editors, Validation & Submit */}
           <div className="space-y-6">
             {/* JSON Editors */}
             {request.requestCriteria?.includes('mongodbandredis') && (
-              <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
-                <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-                  <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-                  Schema Configuration
-                </h2>
+              <>
                 <JsonEditor
                   value={request.headerSchema || ''}
                   onChange={(value) => updateRequest({ headerSchema: value })}
@@ -641,7 +634,7 @@ export const OnboardForm: React.FC = () => {
                   height="200px"
                   error={validationErrors.payloadSchema}
                 />
-              </div>
+              </>
             )}
 
             {/* Validation Panel */}
@@ -652,7 +645,6 @@ export const OnboardForm: React.FC = () => {
             />
 
             {/* Submit Button */}
-            <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
               <button
                 type="submit"
                 disabled={!isValid || mutation.isPending || (hasSubmitted && !formHasChanged)}
@@ -666,7 +658,7 @@ export const OnboardForm: React.FC = () => {
                   <span className="flex items-center justify-center">
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     Submitting...
                   </span>
@@ -674,12 +666,13 @@ export const OnboardForm: React.FC = () => {
                   'Submit Onboarding Request'
                 )}
               </button>
-            </div>
+          </div>
+          </div>
 
-            {/* Task Results */}
-            {/* Operation Status Banner */}
-            {operationStatus && (
-              <div className={`mb-6 p-5 rounded-lg border-l-4 ${
+          {/* Task Results */}
+          {/* Operation Status Banner */}
+          {operationStatus && (
+            <div className={`mt-6 p-5 rounded-lg border-l-4 ${
                 operationStatus.type === 'success'
                   ? 'bg-green-50 border-green-400'
                   : operationStatus.type === 'error'
@@ -748,27 +741,17 @@ export const OnboardForm: React.FC = () => {
               </div>
             )}
 
-            {(mutation.isPending || taskResults.length > 0) && (
-              <TaskResults
-                results={taskResults}
-                isLoading={mutation.isPending}
-                requestData={lastRequestData}
-                responseData={lastResponseData}
-                operationName="New Event Onboarding"
-              />
-            )}
+          {(mutation.isPending || taskResults.length > 0) && (
+            <TaskResults
+              results={taskResults}
+              isLoading={mutation.isPending}
+              requestData={lastRequestData}
+              responseData={lastResponseData}
+              operationName="New Event Onboarding"
+            />
+          )}
           </div>
         </form>
-        ) : (
-          <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8">
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🎯</div>
-              <h2 className="text-2xl font-bold text-primary-700 mb-4">Select Environment First</h2>
-              <p className="text-gray-600 mb-6">
-                Please select an environment above to configure and submit onboarding requests.
-              </p>
-            </div>
-          </div>
         )}
 
         {/* Token Generation Modal */}

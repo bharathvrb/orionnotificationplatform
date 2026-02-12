@@ -30,7 +30,7 @@ export const Home: React.FC = () => {
 
   // Icon components for each action card - SVG icons representing each task
   const OnboardIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="17 8 12 3 7 8" />
       <line x1="12" y1="3" x2="12" y2="15" />
@@ -39,7 +39,7 @@ export const Home: React.FC = () => {
   );
 
   const ViewEventsIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <polyline points="14 2 14 8 20 8" />
       <line x1="16" y1="13" x2="8" y2="13" />
@@ -49,7 +49,7 @@ export const Home: React.FC = () => {
   );
 
   const MongoDBIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <ellipse cx="12" cy="5" rx="9" ry="3" />
       <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
       <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
@@ -59,7 +59,7 @@ export const Home: React.FC = () => {
   );
 
   const KafkaIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       {/* Representing Kafka topics and message flow */}
       <rect x="3" y="4" width="18" height="16" rx="2" />
       <line x1="7" y1="8" x2="17" y2="8" />
@@ -76,33 +76,21 @@ export const Home: React.FC = () => {
   const actionCards = [
     {
       title: 'New Event Onboarding',
-      description: (
-        <>
-          Configure and <span style={{ fontWeight: '700', color: '#000000' }}>onboard</span> <span style={{ fontWeight: '700', color: '#000000' }}>new events</span> to the platform with ease
-        </>
-      ),
+      description: 'Configure and onboard new events to the platform with ease',
       iconComponent: OnboardIcon,
       gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
       onClick: () => navigate('/onboard'),
     },
     {
       title: 'MongoDB and Redis Details',
-      description: (
-        <>
-          <span style={{ fontWeight: '700', color: '#000000' }}>View</span> <span style={{ fontWeight: '700', color: '#000000' }}>existing events</span>, <span style={{ fontWeight: '700', color: '#000000' }}>insert</span> <span style={{ fontWeight: '700', color: '#000000' }}>new event</span>, or <span style={{ fontWeight: '700', color: '#000000' }}>update event</span> entries in MongoDB and refresh Redis cache
-        </>
-      ),
+      description: 'View existing events, insert new event, or update event entries in MongoDB and refresh Redis cache',
       iconComponent: MongoDBIcon,
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       onClick: () => navigate('/mongodb'),
     },
     {
       title: 'Kafka Details',
-      description: (
-        <>
-          <span style={{ fontWeight: '700', color: '#000000' }}>View</span> <span style={{ fontWeight: '700', color: '#000000' }}>existing Kafka topics</span> and consumer groups, or <span style={{ fontWeight: '700', color: '#000000' }}>create</span> <span style={{ fontWeight: '700', color: '#000000' }}>new Kafka topic</span> with specified partitions and replication factor
-        </>
-      ),
+      description: 'View existing Kafka topics and consumer groups, or create new Kafka topic with specified partitions and replication factor',
       iconComponent: KafkaIcon,
       gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
       onClick: () => navigate('/kafka'),
@@ -832,7 +820,7 @@ export const Home: React.FC = () => {
                   border: isComingSoon 
                     ? '1px solid rgba(0, 0, 0, 0.08)' 
                     : '1px solid rgba(0, 0, 0, 0.06)',
-                  padding: '1.75rem',
+                  padding: '1.5rem',
                   cursor: 'pointer',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
@@ -840,7 +828,7 @@ export const Home: React.FC = () => {
                   opacity: isComingSoon ? 0.7 : 1,
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: '240px',
+                  minHeight: '210px',
                   animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
                 }}
                 onMouseEnter={(e) => {
@@ -912,18 +900,18 @@ export const Home: React.FC = () => {
                   zIndex: 2,
                   display: 'flex', 
                   flexDirection: 'column',
-                  gap: '1rem',
+                  gap: '0.875rem',
                   height: '100%'
                 }}>
                   {/* Icon Container */}
                   <div style={{ 
-                    width: '56px',
-                    height: '56px',
+                    width: '48px',
+                    height: '48px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     background: card.gradient,
-                    borderRadius: '0.875rem',
+                    borderRadius: '0.75rem',
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     opacity: isComingSoon ? 0.6 : 1,
@@ -951,7 +939,7 @@ export const Home: React.FC = () => {
                     flexGrow: 1, 
                     display: 'flex', 
                     flexDirection: 'column',
-                    gap: '1rem'
+                    gap: '0.75rem'
                   }}>
                     {/* Title and Description */}
                     <div>
@@ -959,13 +947,13 @@ export const Home: React.FC = () => {
                         fontSize: '1.125rem', 
                         fontWeight: '700', 
                         color: isComingSoon ? 'rgba(30, 64, 175, 0.5)' : '#1e40af', 
-                        margin: '0 0 0.625rem 0',
+                        margin: '0 0 0.5rem 0',
                         letterSpacing: '-0.01em'
                       }}>
                         {card.title}
                       </h3>
                       <p style={{ 
-                        fontSize: '0.9375rem', 
+                        fontSize: '1rem', 
                         color: isComingSoon ? 'rgba(75, 85, 99, 0.6)' : '#4b5563', 
                         lineHeight: '1.7',
                         fontWeight: '400',

@@ -406,10 +406,6 @@ export const KafkaDetails: React.FC<KafkaDetailsProps> = ({ hideHeader = false }
 
         {/* Environment Selection Box - Show first */}
         <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
-          <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-            <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-            Select Environment
-          </h2>
           <div>
             <label htmlFor="environment" className="block text-sm font-semibold text-primary-700 mb-3">
               Environment *
@@ -436,58 +432,55 @@ export const KafkaDetails: React.FC<KafkaDetailsProps> = ({ hideHeader = false }
           </div>
         </div>
 
-        {/* Authorization Token Box - Show after environment is selected */}
-        {environment && (
-          <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
-            <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-              <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-              Authorization Token
-            </h2>
-            <div>
-              <label htmlFor="authorization" className="block text-sm font-medium text-gray-700 mb-2">
-                Authorization Token
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="authorization"
-                  type="password"
-                  value={authorization}
-                  onChange={(e) => {
-                    setAuthorization(e.target.value);
-                    if (hasSubmitted) setFormHasChanged(true);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Enter authorization token or generate one"
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthorization(''); // Clear manual token when opening Generate Token modal
-                    setShowTokenModal(true);
-                  }}
-                  disabled={!environment || loading || !!(authorization && authorization.trim().length > 0)}
-                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                    !!(environment && !loading && (!authorization || !authorization.trim()))
-                      ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                  title={!environment ? 'Please select an environment first' : (authorization && authorization.trim()) ? 'Clear the token field to generate a new token' : 'Generate token'}
-                >
-                  Generate Token
-                </button>
-              </div>
-              <p className="mt-1 text-sm text-gray-500">
-                Optional: Generate a token using SAT service or enter a custom token
-              </p>
-            </div>
-          </div>
-        )}
+      {/* Form Fields - Show after environment is selected */}
+      {environment && (
+      <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
+        <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
+          <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
+          View Kafka Details
+        </h2>
 
-        {/* Form Fields - Show after environment is selected */}
-        {environment && (
-        <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8">
-          <form onSubmit={handleSubmit} className="mb-8">
+        {/* Authorization Token */}
+        <div className="mb-6">
+          <label htmlFor="authorization" className="block text-sm font-semibold text-primary-700 mb-2">
+            Authorization Token
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="authorization"
+              type="password"
+              value={authorization}
+              onChange={(e) => {
+                setAuthorization(e.target.value);
+                if (hasSubmitted) setFormHasChanged(true);
+              }}
+              className="flex-1 px-4 py-2.5 border-2 border-primary-400 rounded-lg focus:ring-2 focus:ring-primary-300 focus:border-primary-500"
+              placeholder="Enter authorization token or generate one"
+              disabled={loading}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setAuthorization('');
+                setShowTokenModal(true);
+              }}
+              disabled={!environment || loading || !!(authorization && authorization.trim().length > 0)}
+              className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                !!(environment && !loading && (!authorization || !authorization.trim()))
+                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+              title={!environment ? 'Please select an environment first' : (authorization && authorization.trim()) ? 'Clear the token field to generate a new token' : 'Generate token'}
+            >
+              Generate Token
+            </button>
+          </div>
+          <p className="mt-1 text-sm text-gray-500">
+            Optional: Generate a token using SAT service or enter a custom token
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mb-8">
             <div className="space-y-4">
               <div className="flex items-center">
                 <input
@@ -548,8 +541,6 @@ export const KafkaDetails: React.FC<KafkaDetailsProps> = ({ hideHeader = false }
               </button>
             </div>
           </form>
-        </div>
-        )}
 
         {error && (
             <div className={`mb-6 p-5 rounded-lg border-l-4 ${
@@ -739,17 +730,10 @@ export const KafkaDetails: React.FC<KafkaDetailsProps> = ({ hideHeader = false }
             </div>
           )}
 
-          {!kafkaDetails && !loading && !error && (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">⚡</div>
-              <h2 className="text-2xl font-bold text-primary-700 mb-4">View Kafka Details</h2>
-              <p className="text-gray-600 mb-6">
-                Enter Kafka topic names above (comma-separated) to view event configuration present in Kafka including topics, consumer groups, and related settings.
-              </p>
-            </div>
-          )}
+      </div>
+      )}
 
-          {/* Token Generation Modal */}
+      {/* Token Generation Modal */}
           {showTokenModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 max-w-md w-full p-6">

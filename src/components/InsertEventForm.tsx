@@ -240,11 +240,6 @@ export const InsertEventForm: React.FC<InsertEventFormProps> = ({ hideHeader = f
 
       {/* Environment Selection Section */}
       <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
-        <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-          <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-          Select Environment
-        </h2>
-        
         <div className="mb-6">
           <label htmlFor="environment" className="block text-sm font-semibold text-primary-700 mb-3">
             Environment *
@@ -280,15 +275,18 @@ export const InsertEventForm: React.FC<InsertEventFormProps> = ({ hideHeader = f
       </div>
 
       {/* Form Fields - Show only when environment is selected */}
-      {environment ? (
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {environment && (
+        <form onSubmit={handleSubmit}>
+          {/* Single Insert Event Box */}
+          <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
+            <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
+              <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
+              Insert Event
+            </h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Form */}
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
-              <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-                <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-                Event Configuration
-              </h2>
 
               {/* Authorization Token */}
               <div className="mb-6">
@@ -385,17 +383,11 @@ export const InsertEventForm: React.FC<InsertEventFormProps> = ({ hideHeader = f
                 requireHttpStatusCode={false}
                 showClientAndEndpoint={true}
               />
-            </div>
           </div>
 
-          {/* Right Column - JSON Preview & Submit */}
+          {/* Right Column - JSON Editors, Validation & Submit */}
           <div className="space-y-6">
-            {/* JSON Editors */}
-            <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
-              <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-                <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-                Schema Configuration
-              </h2>
+              {/* JSON Editors */}
               <JsonEditor
                 value={request.headerSchema || ''}
                 onChange={(value) => updateRequest({ headerSchema: value })}
@@ -410,17 +402,15 @@ export const InsertEventForm: React.FC<InsertEventFormProps> = ({ hideHeader = f
                 height="200px"
                 error={validationErrors.payloadSchema}
               />
-            </div>
 
-            {/* Validation Panel */}
-            <ValidationPanel
-              errors={errors}
-              requestCriteria={request.requestCriteria || []}
-              isValid={isValid}
-            />
+              {/* Validation Panel */}
+              <ValidationPanel
+                errors={errors}
+                requestCriteria={request.requestCriteria || []}
+                isValid={isValid}
+              />
 
-            {/* Submit Button */}
-            <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={!isValid || mutation.isPending || (hasSubmitted && !formHasChanged)}
@@ -442,100 +432,91 @@ export const InsertEventForm: React.FC<InsertEventFormProps> = ({ hideHeader = f
                   'Insert New Event'
                 )}
               </button>
-            </div>
+          </div>
+          </div>
 
-            {/* Operation Status Banner */}
-            {operationStatus && (
-              <div className={`mb-6 p-5 rounded-lg border-l-4 ${
-                operationStatus.type === 'success'
-                  ? 'bg-green-50 border-green-400'
-                  : operationStatus.type === 'error'
-                  ? 'bg-red-50 border-red-400'
-                  : 'bg-yellow-50 border-yellow-400'
-              }`}>
-                <div className="flex items-start">
-                  {operationStatus.type === 'success' ? (
-                    <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  ) : operationStatus.type === 'error' ? (
-                    <svg className="w-5 h-5 text-red-400 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5 text-yellow-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
+          {/* Operation Status Banner */}
+          {operationStatus && (
+            <div className={`mt-6 p-5 rounded-lg border-l-4 ${
+              operationStatus.type === 'success'
+                ? 'bg-green-50 border-green-400'
+                : operationStatus.type === 'error'
+                ? 'bg-red-50 border-red-400'
+                : 'bg-yellow-50 border-yellow-400'
+            }`}>
+              <div className="flex items-start">
+                {operationStatus.type === 'success' ? (
+                  <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                ) : operationStatus.type === 'error' ? (
+                  <svg className="w-5 h-5 text-red-400 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 text-yellow-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                )}
+                <div className="flex-1">
+                  <p className={`font-semibold mb-1 ${
+                    operationStatus.type === 'success'
+                      ? 'text-green-800'
+                      : operationStatus.type === 'error'
+                      ? 'text-red-800'
+                      : 'text-yellow-800'
+                  }`}>
+                    {operationStatus.type === 'success' ? 'Success' : 
+                     operationStatus.type === 'error' ? 'Error' : 'Warning'}
+                  </p>
+                  <p className={`text-sm ${
+                    operationStatus.type === 'success'
+                      ? 'text-green-700'
+                      : operationStatus.type === 'error'
+                      ? 'text-red-700'
+                      : 'text-yellow-700'
+                  }`}>
+                    {operationStatus.message}
+                  </p>
+                  {operationStatus.statusCode && (
+                    <div className={`mt-2 flex items-center gap-2 text-xs ${
+                      operationStatus.type === 'success'
+                        ? 'text-green-600'
+                        : operationStatus.type === 'error'
+                        ? 'text-red-600'
+                        : 'text-yellow-600'
+                    }`}>
+                      <span className="px-2 py-1 bg-white bg-opacity-50 rounded border border-current font-mono font-semibold">
+                        HTTP Status: {operationStatus.statusCode}
+                      </span>
+                    </div>
                   )}
-                  <div className="flex-1">
-                    <p className={`font-semibold mb-1 ${
-                      operationStatus.type === 'success'
-                        ? 'text-green-800'
-                        : operationStatus.type === 'error'
-                        ? 'text-red-800'
-                        : 'text-yellow-800'
-                    }`}>
-                      {operationStatus.type === 'success' ? 'Success' : 
-                       operationStatus.type === 'error' ? 'Error' : 'Warning'}
-                    </p>
-                    <p className={`text-sm ${
-                      operationStatus.type === 'success'
-                        ? 'text-green-700'
-                        : operationStatus.type === 'error'
-                        ? 'text-red-700'
-                        : 'text-yellow-700'
-                    }`}>
-                      {operationStatus.message}
-                    </p>
-                    {operationStatus.statusCode && (
-                      <div className={`mt-2 flex items-center gap-2 text-xs ${
-                        operationStatus.type === 'success'
-                          ? 'text-green-600'
-                          : operationStatus.type === 'error'
-                          ? 'text-red-600'
-                          : 'text-yellow-600'
-                      }`}>
-                        <span className="px-2 py-1 bg-white bg-opacity-50 rounded border border-current font-mono font-semibold">
-                          HTTP Status: {operationStatus.statusCode}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setOperationStatus(null)}
-                    className="ml-4 text-gray-400 hover:text-gray-600 transition-colors"
-                    title="Dismiss"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setOperationStatus(null)}
+                  className="ml-4 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Dismiss"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-            )}
+            </div>
+          )}
 
-            {(mutation.isPending || taskResults.length > 0) && (
-              <TaskResults
-                results={taskResults}
-                isLoading={mutation.isPending}
-                requestData={lastRequestData}
-                responseData={lastResponseData}
-                operationName="Insert New Event"
-              />
-            )}
+          {(mutation.isPending || taskResults.length > 0) && (
+            <TaskResults
+              results={taskResults}
+              isLoading={mutation.isPending}
+              requestData={lastRequestData}
+              responseData={lastResponseData}
+              operationName="Insert New Event"
+            />
+          )}
           </div>
         </form>
-      ) : (
-        <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🎯</div>
-            <h2 className="text-2xl font-bold text-primary-700 mb-4">Select Environment First</h2>
-            <p className="text-gray-600 mb-6">
-              Please select an environment above to insert a new event into MongoDB and Redis.
-            </p>
-          </div>
-        </div>
       )}
 
       {/* Token Generation Modal */}

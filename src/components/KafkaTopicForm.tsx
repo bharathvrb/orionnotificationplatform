@@ -265,10 +265,6 @@ export const KafkaTopicForm: React.FC<KafkaTopicFormProps> = ({ hideHeader = fal
 
       {/* Environment Selection Box - Show first */}
       <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
-        <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-          <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-          Select Environment
-        </h2>
         <div>
           <label htmlFor="environment" className="block text-sm font-semibold text-primary-700 mb-3">
             Environment *
@@ -300,69 +296,61 @@ export const KafkaTopicForm: React.FC<KafkaTopicFormProps> = ({ hideHeader = fal
         </div>
       </div>
 
-      {/* Authorization Token Box - Show after environment is selected */}
-      {environment && (
-        <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
-          <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-            <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-            Authorization Token
-          </h2>
-          <div>
-            <label htmlFor="authorization" className="block text-sm font-medium text-gray-700 mb-2">
-              Authorization Token
-            </label>
-            <div className="flex gap-2">
-              <input
-                id="authorization"
-                type="password"
-                value={authorization || request.authorization || ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setAuthorization(value);
-                  updateRequest({ authorization: value });
-                  if (hasSubmitted) setFormHasChanged(true);
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Enter authorization token or generate one"
-                disabled={mutation.isPending}
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthorization('');
-                  updateRequest({ authorization: '' });
-                  setShowTokenModal(true);
-                }}
-                disabled={!environment || mutation.isPending || !!((authorization && authorization.trim().length > 0) || (request.authorization && request.authorization.trim().length > 0))}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                  !!(environment && !mutation.isPending && !authorization?.trim() && !request.authorization?.trim())
-                    ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-                title={!environment ? 'Please select an environment first' : ((authorization && authorization.trim()) || (request.authorization && request.authorization.trim())) ? 'Clear the token field to generate a new token' : 'Generate token'}
-              >
-                Generate Token
-              </button>
-            </div>
-            <p className="mt-1 text-sm text-gray-500">
-              Optional: Generate a token using SAT service or enter a custom token
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Form Fields - Show after environment is selected */}
       {environment && (
       <form onSubmit={handleSubmit}>
+        {/* Single Create Kafka Topic Box */}
+        <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-8 mb-6">
+          <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
+            <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
+            Create Kafka Topic
+          </h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Form */}
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
-              <h2 className="text-lg font-semibold text-primary-700 mb-6 flex items-center">
-                <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></span>
-                Kafka Topic Configuration
-              </h2>
+              {/* Authorization Token */}
+              <div className="mb-6">
+                <label htmlFor="authorization" className="block text-sm font-semibold text-primary-700 mb-2">
+                  Authorization Token
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="authorization"
+                    type="password"
+                    value={authorization || request.authorization || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setAuthorization(value);
+                      updateRequest({ authorization: value });
+                      if (hasSubmitted) setFormHasChanged(true);
+                    }}
+                    className="flex-1 px-4 py-2.5 border-2 border-primary-400 rounded-lg focus:ring-2 focus:ring-primary-300 focus:border-primary-500"
+                    placeholder="Enter authorization token or generate one"
+                    disabled={mutation.isPending}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthorization('');
+                      updateRequest({ authorization: '' });
+                      setShowTokenModal(true);
+                    }}
+                    disabled={!environment || mutation.isPending || !!((authorization && authorization.trim().length > 0) || (request.authorization && request.authorization.trim().length > 0))}
+                    className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                      !!(environment && !mutation.isPending && !authorization?.trim() && !request.authorization?.trim())
+                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-400 hover:to-primary-500 shadow-lg hover:shadow-xl'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    title={!environment ? 'Please select an environment first' : ((authorization && authorization.trim()) || (request.authorization && request.authorization.trim())) ? 'Clear the token field to generate a new token' : 'Generate token'}
+                  >
+                    Generate Token
+                  </button>
+                </div>
+                <p className="mt-1 text-sm text-gray-500">
+                  Optional: Generate a token using SAT service or enter a custom token
+                </p>
+              </div>
 
               {/* Subscriber Name */}
               <div className="mb-4">
@@ -434,7 +422,6 @@ export const KafkaTopicForm: React.FC<KafkaTopicFormProps> = ({ hideHeader = fal
                   </p>
                 )}
               </div>
-            </div>
           </div>
 
           {/* Right Column - Validation & Submit */}
@@ -447,7 +434,6 @@ export const KafkaTopicForm: React.FC<KafkaTopicFormProps> = ({ hideHeader = fal
             />
 
             {/* Submit Button */}
-            <div className="bg-white rounded-xl shadow-2xl border-2 border-primary-400 p-6">
               <button
                 type="submit"
                 disabled={!isValid || !environment || mutation.isPending || (hasSubmitted && !formHasChanged)}
@@ -469,11 +455,12 @@ export const KafkaTopicForm: React.FC<KafkaTopicFormProps> = ({ hideHeader = fal
                   'Create Kafka Topic'
                 )}
               </button>
-            </div>
+          </div>
+        </div>
 
-            {/* Operation Status Banner */}
-            {operationStatus && (
-              <div className={`mb-6 p-5 rounded-lg border-l-4 ${
+          {/* Operation Status Banner */}
+          {operationStatus && (
+            <div className={`mt-6 p-5 rounded-lg border-l-4 ${
                 operationStatus.type === 'success'
                   ? 'bg-green-50 border-green-400'
                   : operationStatus.type === 'error'
@@ -528,16 +515,15 @@ export const KafkaTopicForm: React.FC<KafkaTopicFormProps> = ({ hideHeader = fal
               </div>
             )}
 
-            {(mutation.isPending || taskResults.length > 0) && (
-              <TaskResults
-                results={taskResults}
-                isLoading={mutation.isPending}
-                requestData={lastRequestData}
-                responseData={lastResponseData}
-                operationName="Create Kafka Topic"
-              />
-            )}
-          </div>
+          {(mutation.isPending || taskResults.length > 0) && (
+            <TaskResults
+              results={taskResults}
+              isLoading={mutation.isPending}
+              requestData={lastRequestData}
+              responseData={lastResponseData}
+              operationName="Create Kafka Topic"
+            />
+          )}
         </div>
       </form>
       )}
